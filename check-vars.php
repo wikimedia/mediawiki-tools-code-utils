@@ -434,6 +434,7 @@ class CheckVars {
 						$this->mInProfilingFunction = false;
 						$this->mAfterProfileOut = 0;
 						$this->mFunctionGlobals = array();
+						$this->mLocalVariableTypes = array();
 						$currentToken[0] = self::FUNCTION_DEFINITION;
 						$this->mKnownFunctions[] = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
 
@@ -513,6 +514,8 @@ class CheckVars {
 
 							if ( $lastMeaningfulToken[0] == T_PAAMAYIM_NEKUDOTAYIM ) {
 								/* Class variable. No check for now */
+							} elseif ( $lastMeaningfulToken[0] == T_STRING ) {
+								$this->mLocalVariableTypes[ $token[1] ] = $lastMeaningfulToken[0];
 							} else {
 								if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
 										$this->mFunctionGlobals[ $token[1] ][0] ++;
@@ -885,6 +888,10 @@ class CheckVars {
 			}
 			if ( $token[1] == '$this' )
 				return $this->mClass;
+			
+			if ( isset( $this->mLocalVariableTypes[$token[1]] ) )
+				return $this->mLocalVariableTypes[$token[1]];
+			
 			$name = substr( $token[1], 1 );
 		} elseif ( ( $token[0] == T_STRING ) || ( $token[0] == self::CLASS_MEMBER ) ) {
 			if ( ( $token[1] == 'self' ) && !isset( $token['base'] ) )
