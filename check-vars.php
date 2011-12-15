@@ -880,6 +880,16 @@ class CheckVars {
 			'$dbw' => 'DatabaseBase', '$dbr' => 'DatabaseBase',
 			'$sk' => 'Skin',
 			'$wgMemc' => 'MWMemcached',
+			'$thumb' => 'MediaTransformOutput',
+			'$title' => 'Title', '$titleObj' => 'Title', '$desiredTitleObj' => 'Title',
+			'$article' => 'Article', '$articleObj' => 'Article',
+			'$rev' => 'Revision', '$revision' => 'Revision', 
+			'$undoRev' => 'Revision', '$undoafterRev' => 'Revision',
+			'$msg' => 'Message',
+			'$stash' => 'UploadStash',
+		);
+		static $wellKnownMembers = array(
+			'db' => 'DatabaseBase', 'dbw' => 'DatabaseBase',
 		);
 
 		if ( $token[0] == T_VARIABLE ) {
@@ -901,7 +911,9 @@ class CheckVars {
 
 			$name = $token[1];
 
-			if ( $token[1][0] == 'm' )  // member
+			if ( isset( $wellKnownMembers[$name] ) )
+				$name = $wellKnownMembers[$name];
+			elseif ( $token[1][0] == 'm' )  // member
 				$name = substr( $token[1], 1 );
 		} else {
 			return null;
