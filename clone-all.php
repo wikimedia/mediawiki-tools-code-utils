@@ -3,8 +3,7 @@
 $gerrit = "gerrit.wikimedia.org";
 $baseUrl = "ssh://$gerrit:29418"; // "https://$gerrit/r/p" if you have no ssh access
 
-$skipRepositories = array( 'test/*', 'operations/*', 'analytics*' );
-
+$skipRepositories = array( 'test/*', 'operations/*', 'analytics*', 'labs/*', 'integration/*' );
 
 $command = <<<EOF
 wget https://$gerrit/r/gerrit/rpc/ProjectAdminService  --post-data='{"jsonrpc":"2.0","method":"visibleProjects","params":[],"id":1}' --header "Content-Type: application/json; charset=utf-8" --header "Accept: application/json" -O -
@@ -23,24 +22,24 @@ $projects = $rpc->result;
 foreach ( $projects as $project ) {
 	$repo = $project->name->name;
 	print "$repo\n";
-	
+
 	if ( strpos( $project->description, "DON'T USE" ) !== false ) {
 		echo " Don't use, skipped\n";
 		continue;
 	}
-	
+
 	foreach ( $skipRepositories as $skip ) {
 		if ( fnmatch( $skip, $repo, FNM_CASEFOLD ) ) {
 			echo " Skipped\n";
 			continue 2;
 		}
 	}
-	
+
 	if ( file_exists( "$repo/.git" ) ) {
 		echo " There's already a repository at $repo\n";
 		continue;
 	}
-	
+
 	$start = microtime( true );
 	passthru( "git clone " . escapeshellarg( "$baseUrl/$repo.git" ) . " " . escapeshellarg( $repo ), $exitCode );
 	$end = microtime( true );
