@@ -4,10 +4,10 @@
  * Checks a number of syntax conventions on variables from a valid PHP file.
  *
  * Run as:
- *  find phase3/ \( -name \*.php -or -name \*.inc \) -not \( -name diffLanguage.php -o -name LocalSettings.php -o -name Parser?????.php \) -exec php tools/code-utils/check-vars.php \{\} +
+ *  find core/ \( -name \*.php -or -name \*.inc \) -not \( -name diffLanguage.php -o -name LocalSettings.php -o -name Parser?????.php \) -exec php tools/code-utils/check-vars.php \{\} +
  */
 if ( ! $IP = getenv( 'MW_INSTALL_PATH' ) ) {
-	$IP = dirname( __FILE__ ) . "/../../phase3/";
+	$IP = dirname( __FILE__ ) . "/../../core/";
 }
 
 $IP = rtrim( $IP, "/" );
@@ -317,7 +317,7 @@ class CheckVars {
 		}
 
 		/* Skip HipHop specific requires */
-		$source = preg_replace( '/if \( isset\( \$_SERVER\[\'MW_COMPILED\'\] \) \) {\\s+require \( \'phase3\/.*\' \);\\s+} else {/', 'if ( true ) {', $source );
+		$source = preg_replace( '/if \( isset\( \$_SERVER\[\'MW_COMPILED\'\] \) \) {\\s+require *\( \'core\/.*\' \);\\s+} else {/', 'if ( true ) {', $source );
 
 		$this->mTokens = token_get_all( $source );
 	}
