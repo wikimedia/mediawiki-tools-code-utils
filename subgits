@@ -1,0 +1,16 @@
+#!/bin/sh
+# This command allows you to perform the same action on several git repositories sharing a common root.
+#
+# For instance, after cloning you will want to do 
+#   subgits config user.email "email@address.com"
+#   subgits config user.name "your name"
+#
+# For configuring git-review:
+#   subgits config gitreview.username "shell-username"
+#   subgits review -s
+#
+# For updating all the repositories:
+#   subgits pull
+
+find -name .git -execdir git "$@" \;
+
