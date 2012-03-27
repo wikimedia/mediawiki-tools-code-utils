@@ -12,5 +12,11 @@
 # For updating all the repositories:
 #   subgits pull
 
-find -name .git -execdir git "$@" \;
+EXTRA=""
+if [ "$1" == "-v" ]; then
+  shift
+  EXTRA="-execdir pwd ;"
+fi
+
+find -name .git $EXTRA -execdir git "$@" \;
 
