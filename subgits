@@ -13,7 +13,7 @@
 #   subgits pull
 
 EXTRA=""
-if [ "$1" == "-v" ]; then
+if [ "$1" = "-v" ]; then
   shift
   EXTRA="-execdir pwd ;"
 fi
