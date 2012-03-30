@@ -5,9 +5,10 @@ $baseUrl = "ssh://$gerrit:29418"; // "https://$gerrit/r/p" if you have no ssh ac
 
 $skipRepositories = array( 'test/*', 'operations/*', 'analytics*', 'labs/*', 'integration/*' );
 
-$command = <<<EOF
-wget https://$gerrit/r/gerrit/rpc/ProjectAdminService  --post-data='{"jsonrpc":"2.0","method":"visibleProjects","params":[],"id":1}' --header "Content-Type: application/json; charset=utf-8" --header "Accept: application/json" -O -
-EOF;
+// curl included with Linux or msysgit (Win)
+$command = 'curl -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8"' .
+	' -X POST -d "{\"jsonrpc\":\"2.0\",\"method\":\"visibleProjects\",\"params\":[],\"id\":1}"' .
+	" https://$gerrit/r/gerrit/rpc/ProjectAdminService";
 
 $totalStart = microtime( true );
 $p = popen( $command, "r" );
