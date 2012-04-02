@@ -127,6 +127,7 @@ class CheckVars {
 		'undefined-constant' => true,
 		'missing-requires' => true,
 		'deprecated-calls' => true,
+		'hidden-deprecated-calls' => false,
 		'deprecated-might' => true,
 		'poisoned-function' => true,
 		'error' => true,
@@ -435,6 +436,7 @@ class CheckVars {
 						$this->mAfterProfileOut = 0;
 						$this->mFunctionGlobals = array();
 						$this->mLocalVariableTypes = array();
+						$this->mHiddenDeprecatedCalls = array(); // Deprecated functions called which we should not warn about
 						$currentToken[0] = self::FUNCTION_DEFINITION;
 						$this->mKnownFunctions[] = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
 
@@ -530,7 +532,7 @@ class CheckVars {
 								$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
 							}
 						} elseif ( $token[0] == T_FUNCTION ) {
-							$this->warning( 'function-function', "Uh? Function inside function? A lamda function?" );
+							$this->warning( 'function-function', "Uh? Function inside function? A lambda function?" );
 							$this->error( $token );
 						} elseif ( $token[0] == T_SWITCH ) {
 							if ( !$this->mInSwitch )
@@ -549,6 +551,8 @@ class CheckVars {
 
 							$this->checkClassName( $token );
 							$currentToken[0] = self::CLASS_NAME;
+						} elseif ( $token[0] == T_CONSTANT_ENCAPSED_STRING && is_array( $lastMeaningfulToken ) && $lastMeaningfulToken[1] == 'hideDeprecated()' ) {
+							$this->mHiddenDeprecatedCalls[] = substr( $token[1], 1, -1 );
 						} elseif ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
 							$this->mStatus = self::IN_FUNCTION_REQUIRE;
 							$requirePath = '';
@@ -602,6 +606,11 @@ class CheckVars {
 							}
 						} else if ( $lastMeaningfulToken[0] == self::CLASS_MEMBER ) {
 							$this->checkDeprecation( $lastMeaningfulToken );
+							
+							if ( $lastMeaningfulToken[1] == 'hideDeprecated' ) {
+								// $this->hideDeprecated() used in tests to knowingly test a deprecated function.
+								$lastMeaningfulToken[1] = 'hideDeprecated()';
+							}
 						}
 					}
 
@@ -800,7 +809,12 @@ class CheckVars {
 				$class = $token['class'];
 				do {
 					if ( in_array( $class, $mwDeprecatedFunctions[ $token[1] ] ) ) {
-						$this->warning( 'deprecated-calls', "Non deprecated function $this->mFunction calls deprecated function {$token['class']}::{$token[1]} in line {$token[2]}" );
+						$name = "{$token['class']}::{$token[1]}";
+						
+						if ( in_array( $name, $this->mHiddenDeprecatedCalls ) )
+							$this->warning( 'hidden-deprecated-calls', "Non deprecated function $this->mFunction calls deprecated function $name in line {$token[2]} (hidden warning)" );
+						else
+							$this->warning( 'deprecated-calls', "Non deprecated function $this->mFunction calls deprecated function $name in line {$token[2]}" );
 						return;
 					}
 					if ( !isset( $mwParentClasses[ $class ] ) ) {
