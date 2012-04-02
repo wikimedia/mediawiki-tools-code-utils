@@ -64,11 +64,12 @@ class CheckVars {
 	static $mConstantsDefault = array();
 
 	# Ignore constants with these prefixes:
-	static $constantIgnorePrefixes = array( "PGSQL_", "OCI_", "SQLT_", "DB2_", "XMLREADER_", "SQLSRV_" );
+	static $constantIgnorePrefixes = array( "PGSQL_", "OCI_", "SQLT_", "DB2_", "XMLREADER_", "SQLSRV_", "MCRYPT_" );
 	# Ignore functions with these prefixes:
 	static $functionIgnorePrefixes = array( "pg_", "oci_", "db2_", "gmp_", "sqlsrv_", "exif_", "fss_", "tidy_",
 			"apc_", "eaccelerator_", "xcache_", "wincache_", "apache_", "xdiff_", "wikidiff2_", "parsekit_",
 			"wddx_", "setproctitle", "utf8_", "normalizer_", "dba_", "pcntl_", "finfo_", "mime_content_type", "curl_",
+			"openssl_", "mcrypt_",
 			# GD and images functions:
 			"imagecreatetruecolor", "imagecolorallocate", "imagecolortransparent", "imagealphablending",
 			"imagecopyresized", "imagesx", "imagesy", "imagecopyresampled", "imagesavealpha",
