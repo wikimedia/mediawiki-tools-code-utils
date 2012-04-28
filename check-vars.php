@@ -187,6 +187,7 @@ class CheckVars {
 					'$wgLanguageNames', # Language.php, read by others
 					'$wgMemc', # Setup.php
 					'$wgMessageCache', # Setup.php
+					'$wgLangConvMemc', # Setup.php
 					'$wgNoDBParam', # maintenance, serialized
 					'$wgOut', # Setup.php
 					'$wgParser', # Setup.php
