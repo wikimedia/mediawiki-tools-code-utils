@@ -20,7 +20,7 @@ $projects = $rpc->result;
 
 //print_r( $projects );
 
-foreach ( $projects as $project ) {
+foreach ( $projects->projects as $project ) {
 	$repo = $project->name->name;
 	print "$repo\n";
 
