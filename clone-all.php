@@ -3,7 +3,7 @@
 $gerrit = "gerrit.wikimedia.org";
 $baseUrl = "ssh://$gerrit:29418"; // "https://$gerrit/r/p" if you have no ssh access
 
-$skipRepositories = array( 'test*', 'operations*', 'analytics*', 'labs*', 'integration*', 'wikimedia*', 'mediawiki/tools*', );
+$skipRepositories = array( 'test*', 'operations*', 'analytics*', 'labs*', 'integration*', 'wikimedia*', 'mediawiki/tools*', 'mediawiki/packages*' );
 
 // curl included with Linux or msysgit (Win)
 $command = 'curl -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8"' .
