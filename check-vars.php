@@ -564,7 +564,7 @@ class CheckVars {
 							$currentToken[0] = self::CLASS_MEMBER;
 						} elseif ( $token[0] == T_STRING && is_array( $lastMeaningfulToken ) &&
 							( in_array( $lastMeaningfulToken[0], array( T_INSTANCEOF, T_NEW ) ) ) ) {
-							if ( interface_exists( $token[1] ) ) {
+							if ( interface_exists( $token[1], false ) ) {
 								$currentToken[0] = self::INTERFACE_NAME;
 							} else {
 								$this->checkClassName( $token );
