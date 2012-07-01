@@ -167,6 +167,7 @@ class CheckVars {
 	const CLASS_MEMBER = -5;
 	const FUNCTION_NAME = -6;
 	const FUNCTION_DEFINITION = -7;
+	const INTERFACE_NAME = -9;
 
 	/* Function attribute */
 	const FUNCTION_DEPRECATED = -8;
@@ -563,9 +564,12 @@ class CheckVars {
 							$currentToken[0] = self::CLASS_MEMBER;
 						} elseif ( $token[0] == T_STRING && is_array( $lastMeaningfulToken ) &&
 							( in_array( $lastMeaningfulToken[0], array( T_INSTANCEOF, T_NEW ) ) ) ) {
-
-							$this->checkClassName( $token );
-							$currentToken[0] = self::CLASS_NAME;
+							if ( interface_exists( $token[1] ) ) {
+								$currentToken[0] = self::INTERFACE_NAME;
+							} else {
+								$this->checkClassName( $token );
+								$currentToken[0] = self::CLASS_NAME;
+							}
 						} elseif ( $token[0] == T_CONSTANT_ENCAPSED_STRING && is_array( $lastMeaningfulToken ) && $lastMeaningfulToken[1] == 'hideDeprecated()' ) {
 							$this->mHiddenDeprecatedCalls[] = substr( $token[1], 1, -1 );
 						} elseif ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
