@@ -239,6 +239,19 @@ class CheckVars {
 			'$wgConfiguration' => array( 'Conf.php' ), # It's just an experiment for now
 		);
 
+	protected static $mExtraClassesPerFile = array( # Some files use extra classes provided by some extension
+			'RandomImageGenerator.php' => array( 'Imagick', 'ImagickDraw', 'ImagickPixel' ), # Imagick extension
+			'Bitmap.php' => array( 'Imagick', 'ImagickDraw', 'ImagickPixel', 'ImagickException' ), # One of many backends
+			'SVG.php' => array( 'Imagick' ), # SvgHandler::rasterizeImagickExt, called from $wgSVGConverters
+			
+			'MemcachedPeclBagOStuff.php' => array( 'Memcached' ), // PECL Memcached extension
+			'SwiftFileBackend.php' => array(  // Requires MW extension and php-cloudfiles library
+				'AuthenticationException', 'CloudFilesException', 'NoSuchContainerException', 
+				'CDNNotEnabledException', 'BadContentTypeException', 'NoSuchObjectException', 'NonEmptyContainerException', 'IOException',
+				'CF_Authentication', 'CF_Async_Op', 'CF_Async_Op_Batch', 'CF_Connection', 'CF_Container', 'CF_Object' ),
+			
+		);
+
 	function setGenerateDeprecatedList( $bool = true ) {
 		$this->generateDeprecatedList = $bool;
 	}
@@ -1062,7 +1075,9 @@ class CheckVars {
 		if ( substr( $token[1], 0, 12 ) == "Net_Gearman_" ) return $token[1]; # phase3/maintenance/gearman/gearman.inc
 		if ( $token[1] == "PEAR_Error" ) return $token[1]; # Services_JSON.php
 		if ( $token[1] == "PHP_Timer" ) return $token[1]; # From PEAR, used in ParserHelpers.php
-		if ( substr( $token[1], 0, 7 ) == "Imagick" ) return $token[1]; # Imagick extension, can be used by phpunit/includes/api/RandomImageGenerator.php
+
+		if ( isset( self::$mExtraClassesPerFile[basename( $this->mFilename ) ] ) && in_array( $token[1], self::$mExtraClassesPerFile[basename( $this->mFilename ) ] )  )
+			return $token[1];
 
 		if ( !isset( $wgAutoloadLocalClasses[$token[1]] ) && !in_array( $token[1], $this->mKnownFileClasses ) ) {
 			if ( $warn == 'now' ) {
