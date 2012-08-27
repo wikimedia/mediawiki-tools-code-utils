@@ -770,9 +770,9 @@ class CheckVars {
 						}
 					}
 					if ( $token == '.' ) {
-						if ( $requirePath == 'dirname(__FILE__)' ) {
+						if ( $requirePath == 'dirname(__FILE__)' || $requirePath == '__DIR__' ) {
 							$requirePath = dirname( $this->mFilename );
-						} elseif ( $requirePath == 'dirname(dirname(__FILE__))' ) {
+						} elseif ( $requirePath == 'dirname(dirname(__FILE__))' || $requirePath == 'dirname(__DIR__)' ) {
 							$requirePath = dirname( dirname( $this->mFilename ) );
 						} elseif ( $requirePath == 'dirname(dirname(dirname(__FILE__)))' ) {
 							$requirePath = dirname( dirname( dirname( $this->mFilename ) ) );
