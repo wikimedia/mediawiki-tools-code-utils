@@ -251,6 +251,7 @@ class CheckVars {
 				'CDNNotEnabledException', 'BadContentTypeException', 'NoSuchObjectException', 'NonEmptyContainerException', 'IOException',
 				'CF_Authentication', 'CF_Async_Op', 'CF_Async_Op_Batch', 'CF_Connection', 'CF_Container', 'CF_Object' ),
 			
+			'RedisBagOStuff.php' => array( 'Redis', 'RedisException' ),
 		);
 
 	function setGenerateDeprecatedList( $bool = true ) {
