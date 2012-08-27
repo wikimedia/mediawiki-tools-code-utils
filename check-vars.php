@@ -548,8 +548,8 @@ class CheckVars {
 								$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
 							}
 						} elseif ( $token[0] == T_FUNCTION ) {
-							$this->warning( 'function-function', "Uh? Function inside function? A lambda function?" );
-							$this->error( $token );
+							$this->warning( 'function-function', "Uh? Function inside function? A lambda function? (line $token[2])" );
+							return;
 						} elseif ( $token[0] == T_SWITCH ) {
 							if ( !$this->mInSwitch )
 								$this->mInSwitch = $this->mBraces;
