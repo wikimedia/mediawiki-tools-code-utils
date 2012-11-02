@@ -24,7 +24,7 @@ foreach ( $projects->projects as $project ) {
 	$repo = $project->name->name;
 	print "$repo\n";
 
-	if ( strpos( strtolower( $project->description ), "delete" ) !== false ) {
+	if ( strpos( strtolower( $project->description ), "deleted" ) !== false ) {
 		echo " Don't use, skipped\n";
 		continue;
 	}
