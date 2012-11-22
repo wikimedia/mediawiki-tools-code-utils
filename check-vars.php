@@ -9,8 +9,20 @@
 if ( ! $IP = getenv( 'MW_INSTALL_PATH' ) ) {
 	$IP = dirname( __FILE__ ) . "/../../core/";
 }
-
 $IP = rtrim( $IP, "/" );
+
+if( !is_dir( $IP ) ) {
+	print <<<EOF
+Oops! Could not find MediaWiki Core.
+
+Try prepending MW_INSTALL_PATH with a valid MediaWiki directory:
+
+ MW_INSTALL_PATH=/path/to/core php {$argv[0]}
+
+EOF;
+	exit(1);
+}
+
 
 require_once( "$IP/includes/Defines.php" ); # Faster than parsing
 require_once( "$IP/includes/AutoLoader.php" );
