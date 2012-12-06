@@ -250,6 +250,9 @@ class CheckVars {
 			'$cliUpgrade' => array( 'CliInstaller.php' ),
 			'$wgArticle' => array( 'Wiki.php' ),
 			'$wgConfiguration' => array( 'Conf.php' ), # It's just an experiment for now
+			'$sort' => array( 'profileinfo.php' ),
+			'$filter' => array( 'profileinfo.php' ),
+			'$expand' => array( 'profileinfo.php' ),
 		);
 
 	protected static $mExtraClassesPerFile = array( # Some files use extra classes provided by some extension
