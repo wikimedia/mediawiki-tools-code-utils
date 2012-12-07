@@ -383,547 +383,547 @@ class CheckVars {
 		$runningQueuedFunctions = false;
 
 		do {
-		foreach ( $this->mTokens as $token ) {
-			if ( self::isMeaningfulToken( $currentToken ) )
-				$lastMeaningfulToken = $currentToken;
-			$currentToken = $token;
+			foreach ( $this->mTokens as $token ) {
+				if ( self::isMeaningfulToken( $currentToken ) )
+					$lastMeaningfulToken = $currentToken;
+				$currentToken = $token;
 
-			if ( $lastMeaningfulToken[0] == T_OPEN_TAG && $token[0] == T_OPEN_TAG ) {
-				# See r69767
-				$this->warning( 'double-php-open', "{$token[1]} in line {$token[2]} after {$lastMeaningfulToken[1]} in line {$lastMeaningfulToken[2]}" );
-			}
-			if ( $token == ';' ) {
-				if ( $lastMeaningfulToken == ';' ) {
-					# See r72751, warn on ;;
-					$this->warning( 'double-;', "Empty statement" );
-				} elseif ( $lastMeaningfulToken[0] == T_FOR ) {
-					# But not on infinte for loops: for ( ; ; )
-					$currentToken = array( ';', ';', $lastMeaningfulToken[2] );
+				if ( $lastMeaningfulToken[0] == T_OPEN_TAG && $token[0] == T_OPEN_TAG ) {
+					# See r69767
+					$this->warning( 'double-php-open', "{$token[1]} in line {$token[2]} after {$lastMeaningfulToken[1]} in line {$lastMeaningfulToken[2]}" );
 				}
-			}
+				if ( $token == ';' ) {
+					if ( $lastMeaningfulToken == ';' ) {
+						# See r72751, warn on ;;
+						$this->warning( 'double-;', "Empty statement" );
+					} elseif ( $lastMeaningfulToken[0] == T_FOR ) {
+						# But not on infinte for loops: for ( ; ; )
+						$currentToken = array( ';', ';', $lastMeaningfulToken[2] );
+					}
+				}
 
-			if ( $lastMeaningfulToken[0] == T_DECLARE && $token[0] == T_STRING ) {
-				$currentToken[0] = T_WHITESPACE; # Ignore the ticks or encoding
-				continue;
-			}
+				if ( $lastMeaningfulToken[0] == T_DECLARE && $token[0] == T_STRING ) {
+					$currentToken[0] = T_WHITESPACE; # Ignore the ticks or encoding
+					continue;
+				}
 
-			if ( is_array( $token ) && ( $token[0] == T_CONSTANT_ENCAPSED_STRING ) && is_array( $lastMeaningfulToken )
-				&& ( ( $lastMeaningfulToken[0] == T_STRING ) || ( $lastMeaningfulToken[0] == self::FUNCTION_NAME ) )
-				&& ( $lastMeaningfulToken[1] == 'define' ) ) {
+				if ( is_array( $token ) && ( $token[0] == T_CONSTANT_ENCAPSED_STRING ) && is_array( $lastMeaningfulToken )
+					&& ( ( $lastMeaningfulToken[0] == T_STRING ) || ( $lastMeaningfulToken[0] == self::FUNCTION_NAME ) )
+					&& ( $lastMeaningfulToken[1] == 'define' ) ) {
 
-				// Mark as defined
-				$this->mConstants[] = trim( $token[1], "'\"" );
-			}
+					// Mark as defined
+					$this->mConstants[] = trim( $token[1], "'\"" );
+				}
 
-			if ( is_array( $token ) && ( $token[0] == T_CONSTANT_ENCAPSED_STRING ) && is_array( $lastMeaningfulToken )
-				&& ( ( $lastMeaningfulToken[0] == T_STRING ) || ( $lastMeaningfulToken[0] == self::FUNCTION_NAME ) )
-				&& ( $lastMeaningfulToken[1] == 'defined' ) ) {
+				if ( is_array( $token ) && ( $token[0] == T_CONSTANT_ENCAPSED_STRING ) && is_array( $lastMeaningfulToken )
+					&& ( ( $lastMeaningfulToken[0] == T_STRING ) || ( $lastMeaningfulToken[0] == self::FUNCTION_NAME ) )
+					&& ( $lastMeaningfulToken[1] == 'defined' ) ) {
 
-				// FIXME: Should be marked as defined only inside this T_IF
-				$this->mConstants[] = trim( $token[1], "'\"" );
-			}
+					// FIXME: Should be marked as defined only inside this T_IF
+					$this->mConstants[] = trim( $token[1], "'\"" );
+				}
 
-			if ( $this->anonymousFunction ) {
-				switch ( $this->anonymousFunction[0] ) {
-					case 1: // After 'function'
-						if ( $token[0] == '(' ) {
-							$this->anonymousFunction[1] .= " (";
-							$this->anonymousFunction[0] = 2;
-						}
-						break;
-					case 2: // In function parameters
-						$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
-						if ( $token[0] == ')' ) {
-							$this->anonymousFunction[0] = 3;
-						}
-						break;
-					case 3: // After function parameters
-						if ( $token[0] == T_USE ) {
-							$this->anonymousFunction[0] = 4;
-							$this->anonymousFunction[1] = rtrim( $this->anonymousFunction[1], ') ' );
-						} elseif ( $token[0] == '{' ) {
-							$this->anonymousFunction[0] = 5;
-							$this->anonymousFunction[1] .= " {";
-							$this->anonymousFunction[2] = 1;
-						}
-						break;
-					case 4: // In USE
-						if ( $token[0] != '(' ) {
+				if ( $this->anonymousFunction ) {
+					switch ( $this->anonymousFunction[0] ) {
+						case 1: // After 'function'
+							if ( $token[0] == '(' ) {
+								$this->anonymousFunction[1] .= " (";
+								$this->anonymousFunction[0] = 2;
+							}
+							break;
+						case 2: // In function parameters
 							$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
-						}
-						if ( $token[0] == T_VARIABLE ) {
-							// TODO: Check that it exists
-						} elseif ( $token[0] == '{' ) {
-							$this->anonymousFunction[0] = 5;
-							$this->anonymousFunction[2] = 1;
-						}
-						break;
-					case 5:
-						$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
-						if ( $token[0] == '{' || $token[0] == T_CURLY_OPEN || $token[0] == T_DOLLAR_OPEN_CURLY_BRACES ) {
-							$this->anonymousFunction[2]++;
-						} elseif ( $token[0] == '}' ) {
-							$this->anonymousFunction[2]--;
+							if ( $token[0] == ')' ) {
+								$this->anonymousFunction[0] = 3;
+							}
+							break;
+						case 3: // After function parameters
+							if ( $token[0] == T_USE ) {
+								$this->anonymousFunction[0] = 4;
+								$this->anonymousFunction[1] = rtrim( $this->anonymousFunction[1], ') ' );
+							} elseif ( $token[0] == '{' ) {
+								$this->anonymousFunction[0] = 5;
+								$this->anonymousFunction[1] .= " {";
+								$this->anonymousFunction[2] = 1;
+							}
+							break;
+						case 4: // In USE
+							if ( $token[0] != '(' ) {
+								$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
+							}
+							if ( $token[0] == T_VARIABLE ) {
+								// TODO: Check that it exists
+							} elseif ( $token[0] == '{' ) {
+								$this->anonymousFunction[0] = 5;
+								$this->anonymousFunction[2] = 1;
+							}
+							break;
+						case 5:
+							$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
+							if ( $token[0] == '{' || $token[0] == T_CURLY_OPEN || $token[0] == T_DOLLAR_OPEN_CURLY_BRACES ) {
+								$this->anonymousFunction[2]++;
+							} elseif ( $token[0] == '}' ) {
+								$this->anonymousFunction[2]--;
 
-							if ( $this->anonymousFunction[2] == 0 ) {
-								$this->queuedFunctions[] = $this->anonymousFunction[1];
-								$this->anonymousFunction = false;
+								if ( $this->anonymousFunction[2] == 0 ) {
+									$this->queuedFunctions[] = $this->anonymousFunction[1];
+									$this->anonymousFunction = false;
+								}
+							}
+							break;
+					}
+
+					continue;
+				}
+
+				switch ( $this->mStatus ) {
+					case self::WAITING_FUNCTION:
+						if ( $token == ';' )
+							$this->mFunctionQualifiers = array();
+
+						if ( $token[0] == T_COMMENT ) {
+							if ( substr( $token[1], 0, 2 ) == '/*' && substr( $token[1], 0, 3 ) != '/**'
+								&& preg_match( '/^\s+\*(?!\/)/m', $token[1] ) && strpos( $token[1], "\$separatorTransformTable = array( ',' => '' )" ) === false ) {
+								$this->warning( 'missed-docblock', "Multiline comment with /* in line $token[2]" );
 							}
 						}
+
+						if ( $token[0] == T_DOC_COMMENT ) {
+							if ( strpos( $token[1], '@deprecated' ) !== false ) {
+								$this->mFunctionQualifiers[] = self::FUNCTION_DEPRECATED;
+							}
+						}
+						if ( in_array( $token[0], self::$functionQualifiers ) ) {
+							$this->mFunctionQualifiers[] = $token[0];
+						}
+						if ( $token[0] == T_INTERFACE ) {
+							$this->mStatus = self::IN_INTERFACE;
+						}
+
+						if ( ( $lastMeaningfulToken[0] == T_CLASS ) && ( $token[0] == T_STRING ) ) {
+							$this->mKnownFileClasses[] = $token[1];
+							$this->mClass = $token[1];
+							$this->mParent = null;
+						}
+
+						if ( $token[0] == '}' ) {
+							$this->mClass = null;
+							$this->mParent = null;
+						}
+
+						if ( ( $lastMeaningfulToken[0] == T_EXTENDS ) && ( $token[0] == T_STRING ) ) {
+							$this->checkClassName( $token );
+							$this->mParent = $token[1];
+							if ( $this->getGenerateParentList() ) {
+								global $mwParentClasses;
+								$mwParentClasses[ $this->mClass ] = $this->mParent;
+							}
+						}
+
+						if ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
+							$this->mStatus = self::IN_REQUIRE_WAITING;
+							$requirePath = "";
+							continue;
+						}
+
+						if ( $token[0] != T_FUNCTION )
+							continue;
+						$this->mStatus = self::IN_FUNCTION_NAME;
 						break;
-				}
 
-				continue;
-			}
+					case self::IN_FUNCTION_NAME:
+						if ( ( $token == '&' ) || ( $token[0] == T_WHITESPACE ) )
+							continue;
+						if ( $token[0] == T_STRING ) {
+							$this->mFunction = $token[1];
+							$this->mStatus = self::IN_FUNCTION_PARAMETERS;
+							$this->mBraces = 0;
+							$this->mInSwitch = 0;
+							$this->mInProfilingFunction = false;
+							$this->mAfterProfileOut = 0;
+							$this->mFunctionGlobals = array();
+							$this->mLocalVariableTypes = array();
+							$this->mHiddenDeprecatedCalls = array(); // Deprecated functions called which we should not warn about
+							$currentToken[0] = self::FUNCTION_DEFINITION;
+							$this->mKnownFunctions[] = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
 
-			switch ( $this->mStatus ) {
-				case self::WAITING_FUNCTION:
-					if ( $token == ';' )
-						$this->mFunctionQualifiers = array();
+							if ( $this->generateDeprecatedList && in_array( self::FUNCTION_DEPRECATED, $this->mFunctionQualifiers ) ) {
+								if ( ( substr( $this->mFunction, 0, 2 ) != "__" ) ) {
+									if ( !isset( $this->mDeprecatedFunctionList[ $this->mFunction ] ) ) {
+										$this->mDeprecatedFunctionList[ $this->mFunction ] = array( $this->mClass );
+									} else {
+										$this->mDeprecatedFunctionList[ $this->mFunction ][] = $this->mClass;
+									}
+								}
+							}
 
-					if ( $token[0] == T_COMMENT ) {
-						if ( substr( $token[1], 0, 2 ) == '/*' && substr( $token[1], 0, 3 ) != '/**'
-							&& preg_match( '/^\s+\*(?!\/)/m', $token[1] ) && strpos( $token[1], "\$separatorTransformTable = array( ',' => '' )" ) === false ) {
-							$this->warning( 'missed-docblock', "Multiline comment with /* in line $token[2]" );
+							$this->debug( "Entering into function {$token[1]} at line {$token[2]} " );
+							continue;
 						}
-					}
 
-					if ( $token[0] == T_DOC_COMMENT ) {
-						if ( strpos( $token[1], '@deprecated' ) !== false ) {
-							$this->mFunctionQualifiers[] = self::FUNCTION_DEPRECATED;
+						$this->error( $token );
+
+					case self::IN_FUNCTION:
+					case self::IN_FUNCTION_PARAMETERS:
+						if ( ( $token == ';' ) && ( $this->mBraces == 0 ) ) {
+							if ( !in_array( T_ABSTRACT, $this->mFunctionQualifiers ) ) {
+								$this->error( $token );
+							}
+							// abstract function
+							$this->mStatus = self::WAITING_FUNCTION;
+							continue;
 						}
-					}
-					if ( in_array( $token[0], self::$functionQualifiers ) ) {
-						$this->mFunctionQualifiers[] = $token[0];
-					}
-					if ( $token[0] == T_INTERFACE ) {
-						$this->mStatus = self::IN_INTERFACE;
-					}
+						if ( $token == '{' ) {
+							$this->mBraces++;
+							if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS )
+								$this->mStatus = self::IN_FUNCTION;
+						} elseif ( $token == '}' ) {
+							$this->mBraces--;
+							if ( $this->mInSwitch <= $this->mBraces )
+								$this->mInSwitch = 0;
 
-					if ( ( $lastMeaningfulToken[0] == T_CLASS ) && ( $token[0] == T_STRING ) ) {
-						$this->mKnownFileClasses[] = $token[1];
-						$this->mClass = $token[1];
-						$this->mParent = null;
-					}
+							$this->purgeGlobals();
+							if ( ! $this->mBraces ) {
+								if ( $this->mInProfilingFunction && $this->mAfterProfileOut & 1 ) {
+									$this->warning( 'profileout', "Reached end of $this->mClass::$this->mFunction with last statement not being wfProfileOut" );
+								}
 
-					if ( $token[0] == '}' ) {
-						$this->mClass = null;
-						$this->mParent = null;
-					}
+								$this->mStatus = self::WAITING_FUNCTION;
+								$this->mFunctionQualifiers = array();
+							}
+						} elseif ( $token == ';' && $this->mInProfilingFunction ) {
+							// Check that there's just a return after wfProfileOut.
+							if ( $this->mAfterProfileOut == 1 ) {
+								$this->mAfterProfileOut = 2;
+							} elseif ( $this->mAfterProfileOut == 2 ) {
+								// Set to 3 in order to bail out at the return.
+								// This way we don't complay about missing return in internal wfProfile sections.
+								$this->mAfterProfileOut = 3;
+							}
+						} elseif ( $token == '@' ) {
+							$this->warning( 'evil-@', "Use of @ operator in function {$this->mFunction}" );
+						} elseif ( is_array ( $token ) ) {
+							if ( $token[0] == T_GLOBAL ) {
+								$this->mStatus = self::IN_GLOBAL;
+								if ( $this->mInSwitch ) {
+									$this->warning( 'global-in-switch', "Defining global variables inside a switch in line $token[2], function {$this->mFunction}" );
+								}
+							} elseif ( ( $token[0] == T_CURLY_OPEN ) || ( $token[0] == T_DOLLAR_OPEN_CURLY_BRACES ) ) {
+								// {$ and ${ and  All these three end in }, so we need to open an extra brace to balance
+								// T_STRING_VARNAME is documented as ${a but it's the text inside the braces
+								$this->mBraces++;
+							}
+							if ( $token[0] == T_STRING_VARNAME ) {
+								$token[0] = T_VARIABLE;
+								$token[1] = '$' . $token[1];
+							}
+							if ( $token[0] == T_VARIABLE ) {
+								# $this->debug( "Found variable $token[1]" );
 
-					if ( ( $lastMeaningfulToken[0] == T_EXTENDS ) && ( $token[0] == T_STRING ) ) {
-						$this->checkClassName( $token );
-						$this->mParent = $token[1];
-						if ( $this->getGenerateParentList() ) {
-							global $mwParentClasses;
-							$mwParentClasses[ $this->mClass ] = $this->mParent;
-						}
-					}
+								if ( ( $token[1] == '$this' ) && in_array( T_STATIC, $this->mFunctionQualifiers ) ) {
+									$this->warning( 'this-in-static', "Use of \$this in static method function {$this->mFunction} in line $token[2]" );
+								}
 
-					if ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
-						$this->mStatus = self::IN_REQUIRE_WAITING;
-						$requirePath = "";
-						continue;
-					}
-
-					if ( $token[0] != T_FUNCTION )
-						continue;
-					$this->mStatus = self::IN_FUNCTION_NAME;
-					break;
-
-				case self::IN_FUNCTION_NAME:
-					if ( ( $token == '&' ) || ( $token[0] == T_WHITESPACE ) )
-						continue;
-					if ( $token[0] == T_STRING ) {
-						$this->mFunction = $token[1];
-						$this->mStatus = self::IN_FUNCTION_PARAMETERS;
-						$this->mBraces = 0;
-						$this->mInSwitch = 0;
-						$this->mInProfilingFunction = false;
-						$this->mAfterProfileOut = 0;
-						$this->mFunctionGlobals = array();
-						$this->mLocalVariableTypes = array();
-						$this->mHiddenDeprecatedCalls = array(); // Deprecated functions called which we should not warn about
-						$currentToken[0] = self::FUNCTION_DEFINITION;
-						$this->mKnownFunctions[] = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
-
-						if ( $this->generateDeprecatedList && in_array( self::FUNCTION_DEPRECATED, $this->mFunctionQualifiers ) ) {
-							if ( ( substr( $this->mFunction, 0, 2 ) != "__" ) ) {
-								if ( !isset( $this->mDeprecatedFunctionList[ $this->mFunction ] ) ) {
-									$this->mDeprecatedFunctionList[ $this->mFunction ] = array( $this->mClass );
+								if ( $lastMeaningfulToken[0] == T_PAAMAYIM_NEKUDOTAYIM ) {
+									/* Class variable. No check for now */
+								} elseif ( $lastMeaningfulToken[0] == T_STRING ) {
+									$this->mLocalVariableTypes[ $token[1] ] = $lastMeaningfulToken[0];
 								} else {
-									$this->mDeprecatedFunctionList[ $this->mFunction ][] = $this->mClass;
+									if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
+											$this->mFunctionGlobals[ $token[1] ][0] ++;
+									} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
+										if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS && $runningQueuedFunctions ) {
+											// It will be a global passed in the use clause of the anonymous function
+											$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] ); // Register as global
+										} else {
+											$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
+										}
+									}
+								}
+							} elseif ( $token[0] == T_RETURN && $this->mInProfilingFunction ) {
+								if ( $this->mAfterProfileOut == 2 ) {
+									$this->mAfterProfileOut = 0;
+								} else {
+									$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
+								}
+							} elseif ( $token[0] == T_FUNCTION ) {
+								// We are already inside a function, so we must be entering an anonymous function
+								$this->anonymousFunction = array( 1, "function __anonymous_function_line" . $token[2] );
+								continue;
+							} elseif ( $token[0] == T_SWITCH ) {
+								if ( !$this->mInSwitch )
+									$this->mInSwitch = $this->mBraces;
+							} elseif ( ( $token[0] == T_PAAMAYIM_NEKUDOTAYIM ) && is_array( $lastMeaningfulToken ) && ( $lastMeaningfulToken[0] == T_VARIABLE ) ) {
+								if ( ( $lastMeaningfulToken[1] == '$self' ) || ( $lastMeaningfulToken[1] == '$parent' ) ) {
+									# Bug of r69904
+									$this->warning( '$self', "$lastMeaningfulToken[1]:: used in line $lastMeaningfulToken[2] It probably should have been " . substr( $lastMeaningfulToken[1], 1 ) . "::" );
+								}
+							} elseif ( ( $token[0] == T_STRING ) && ( is_array( $lastMeaningfulToken )
+									&& in_array( $lastMeaningfulToken[0], array( T_OBJECT_OPERATOR, T_PAAMAYIM_NEKUDOTAYIM ) ) ) ) {
+								# Class member or class constant
+								$currentToken[0] = self::CLASS_MEMBER;
+							} elseif ( $token[0] == T_STRING && is_array( $lastMeaningfulToken ) &&
+								( in_array( $lastMeaningfulToken[0], array( T_INSTANCEOF, T_NEW ) ) ) ) {
+								if ( interface_exists( $token[1], false ) ) {
+									$currentToken[0] = self::INTERFACE_NAME;
+								} else {
+									$this->checkClassName( $token );
+									$currentToken[0] = self::CLASS_NAME;
+								}
+							} elseif ( $token[0] == T_CONSTANT_ENCAPSED_STRING && is_array( $lastMeaningfulToken ) && $lastMeaningfulToken[1] == 'hideDeprecated()' ) {
+								$this->mHiddenDeprecatedCalls[] = substr( $token[1], 1, -1 );
+							} elseif ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
+								$this->mStatus = self::IN_FUNCTION_REQUIRE;
+								$requirePath = '';
+								continue;
+							}
+						}
+
+						if ( self::isMeaningfulToken( $token ) && ( $lastMeaningfulToken[0] == T_THROW ) ) {
+							if ( $token[0] == T_VARIABLE ) {
+								// Probably rethrowing from a catch, skip
+							} elseif ( $token[0] == T_NEW ) {
+								// Correct, a new class instance
+								// TODO: Verify it inherits from Exception
+							} else {
+								// We only want the last interpretation, see r77752
+								// throw Exception; -> Exception is a constant
+								// throw Exception("Foo"); -> Exception() is a function
+								// throw new Exception("Foo"); -> Exception is a class.
+
+								$this->warning( 'function-throw', "Not using new when throwing token {$token[1]} in line $token[2], function {$this->mFunction}" );
+							}
+						}
+
+						/* Try to guess the class of the variable */
+						if ( in_array( $token[0], array( T_OBJECT_OPERATOR, T_PAAMAYIM_NEKUDOTAYIM ) ) ) {
+							$currentToken['base'] = $lastMeaningfulToken;
+						} else
+						if ( ( ( $token[0] == T_STRING ) || ( $token[0] == self::CLASS_MEMBER ) )
+							&& is_array( $lastMeaningfulToken ) && isset( $lastMeaningfulToken['base'] ) ) {
+							$currentToken['base'] = $lastMeaningfulToken['base'];
+							$currentToken['class'] = $this->guessClassName( $lastMeaningfulToken['base'] );
+						}
+
+						if ( ( $token == '(' ) && is_array( $lastMeaningfulToken ) ) {
+							if ( $lastMeaningfulToken[0] == T_STRING ) {
+								$lastMeaningfulToken[0] = self::FUNCTION_NAME;
+								$this->checkDeprecation( $lastMeaningfulToken );
+								$this->checkFunctionName( $lastMeaningfulToken );
+								if ( $lastMeaningfulToken[1] == 'wfProfileIn' ) {
+									$this->mInProfilingFunction = true;
+									$this->mAfterProfileOut = 0;
+								} elseif ( $lastMeaningfulToken[1] == 'wfProfileOut' ) {
+									global $mwParentClasses;// echo "wfProfileOut $this->mClass " . ( isset( $mwParentClasses[ $this->mClass ] ) ? $mwParentClasses[ $this->mClass ] : "" ). "\n";
+									if ( ( isset( $mwParentClasses[ $this->mClass ] ) && $mwParentClasses[ $this->mClass ] == 'ImageHandler' ) ||
+										( $this->mClass == 'Hooks' && $this->mFunction == 'run' ) ) {
+										// Do not treat as profiling any more. ImageHandler sons have profile sections just for their wfShellExec(). wfRunHooks profiles each hook.
+										$this->mInProfilingFunction = false;
+									} else {
+										$this->mAfterProfileOut = 1;
+									}
+								}
+							} else if ( $lastMeaningfulToken[0] == self::CLASS_MEMBER ) {
+								$this->checkDeprecation( $lastMeaningfulToken );
+								
+								if ( $lastMeaningfulToken[1] == 'hideDeprecated' ) {
+									// $this->hideDeprecated() used in tests to knowingly test a deprecated function.
+									$lastMeaningfulToken[1] = 'hideDeprecated()';
 								}
 							}
 						}
 
-						$this->debug( "Entering into function {$token[1]} at line {$token[2]} " );
-						continue;
-					}
+						/* Detect constants */
+						if ( self::isMeaningfulToken( $token ) && is_array( $lastMeaningfulToken ) &&
+								( $lastMeaningfulToken[0] == T_STRING ) && !self::isPhpConstant( $lastMeaningfulToken[1] ) ) {
 
-					$this->error( $token );
+							if ( in_array( $token[0], array( T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE, T_INSTANCEOF ) ) ) {
+								$this->checkClassName( $lastMeaningfulToken );
+							} else {
 
-				case self::IN_FUNCTION:
-				case self::IN_FUNCTION_PARAMETERS:
-					if ( ( $token == ';' ) && ( $this->mBraces == 0 ) ) {
-						if ( !in_array( T_ABSTRACT, $this->mFunctionQualifiers ) ) {
-							$this->error( $token );
+								if ( !defined( $lastMeaningfulToken[1] ) && !in_array( $lastMeaningfulToken[1], $this->mConstants ) && !self::inIgnoreList( $lastMeaningfulToken[1], self::$constantIgnorePrefixes ) ) {
+									$this->warning( 'undefined-constant', "Use of undefined constant $lastMeaningfulToken[1] in line $lastMeaningfulToken[2]" );
+								}
+							}
 						}
-						// abstract function
-						$this->mStatus = self::WAITING_FUNCTION;
 						continue;
-					}
-					if ( $token == '{' ) {
-						$this->mBraces++;
-						if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS )
+
+					case self::IN_GLOBAL:
+						if ( $token == ',' )
+							continue;
+						if ( $token == ';' ) {
 							$this->mStatus = self::IN_FUNCTION;
-					} elseif ( $token == '}' ) {
-						$this->mBraces--;
-						if ( $this->mInSwitch <= $this->mBraces )
-							$this->mInSwitch = 0;
-
-						$this->purgeGlobals();
-						if ( ! $this->mBraces ) {
-							if ( $this->mInProfilingFunction && $this->mAfterProfileOut & 1 ) {
-								$this->warning( 'profileout', "Reached end of $this->mClass::$this->mFunction with last statement not being wfProfileOut" );
-							}
-
-							$this->mStatus = self::WAITING_FUNCTION;
-							$this->mFunctionQualifiers = array();
+							continue;
 						}
-					} elseif ( $token == ';' && $this->mInProfilingFunction ) {
-						// Check that there's just a return after wfProfileOut.
-						if ( $this->mAfterProfileOut == 1 ) {
-							$this->mAfterProfileOut = 2;
-						} elseif ( $this->mAfterProfileOut == 2 ) {
-							// Set to 3 in order to bail out at the return.
-							// This way we don't complay about missing return in internal wfProfile sections.
-							$this->mAfterProfileOut = 3;
-						}
-					} elseif ( $token == '@' ) {
-						$this->warning( 'evil-@', "Use of @ operator in function {$this->mFunction}" );
-					} elseif ( is_array ( $token ) ) {
-						if ( $token[0] == T_GLOBAL ) {
-							$this->mStatus = self::IN_GLOBAL;
-							if ( $this->mInSwitch ) {
-								$this->warning( 'global-in-switch', "Defining global variables inside a switch in line $token[2], function {$this->mFunction}" );
+						if ( !self::isMeaningfulToken( $token ) )
+							continue;
+
+						if ( is_array( $token ) ) {
+							if ( $token[0] == T_VARIABLE ) {
+								if ( !$this->shouldBeGlobal( $token[1] ) && !$this->canBeGlobal( $token[1] ) ) {
+									$this->warning( 'global-names', "Global variable {$token[1]} in line {$token[2]}, function {$this->mFunction} does not follow coding conventions" );
+								}
+								if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
+									if ( !$this->mInSwitch ) {
+										$this->warning( 'double-globals', $token[1] . " marked as global again in line {$token[2]}, function {$this->mFunction}" );
+									}
+								} else {
+									$this->checkGlobalName( $token[1] );
+									$this->mFunctionGlobals[ $token[1] ] = array( 0, $this->mBraces, $token[2] );
+								}
+								continue;
 							}
-						} elseif ( ( $token[0] == T_CURLY_OPEN ) || ( $token[0] == T_DOLLAR_OPEN_CURLY_BRACES ) ) {
-							// {$ and ${ and  All these three end in }, so we need to open an extra brace to balance
-							// T_STRING_VARNAME is documented as ${a but it's the text inside the braces
+						}
+						$this->error( $token );
+
+					case self::IN_INTERFACE:
+						if ( $lastMeaningfulToken[0] == T_INTERFACE )
+							$this->mKnownFileClasses[] = $token[1];
+
+						if ( $token == '{' ) {
 							$this->mBraces++;
+						} elseif ( $token == '}' ) {
+							$this->mBraces--;
+							if ( !$this->mBraces )
+								$this->mStatus = self::WAITING_FUNCTION;
 						}
+						continue;
+
+					case self::IN_REQUIRE_WAITING:
+					case self::IN_FUNCTION_REQUIRE:
+						if ( $token == ';' ) {
+							$requirePath = trim( $requirePath, ')("' );
+
+							if ( substr( $requirePath, 0, 8 ) == "PHPUnit/" ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( $requirePath == "Testing/Selenium.php" ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( substr( $requirePath, 0, 12 ) == "Net/Gearman/" ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( substr( $requirePath, -18 ) == "/LocalSettings.php" ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( substr( $requirePath, -18 ) == "/StartProfiler.php" ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( strpos( $requirePath, '/wmf-config/' ) !== false ) {
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( $requirePath == "Mail.php" ) { # PEAR mail
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+
+							if ( ( $requirePath == '' ) || ( !file_exists( $requirePath ) && $requirePath[0] != '/' ) ) {
+								/* Try prepending the script folder, for maintenance scripts (but see Maintenance.php:758) */
+								$requirePath = dirname( $this->mFilename ) . "/" . $requirePath;
+							}
+
+							if ( $requirePath == "Mail.php" || $requirePath == "Mail/mime.php" ) { # PEAR mail
+								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+								continue;
+							}
+							if ( !file_exists( $requirePath ) ) {
+								if ( strpos( $requirePath, '$' ) === false ) {
+									$this->warning( 'missing-requires', "Did not found the expected require of $requirePath" );
+								}
+							} else {
+								$requirePath = realpath( $requirePath );
+								if ( isset( self::$mRequireKnownClasses[$requirePath] ) ) {
+									$this->mKnownFileClasses = array_merge( $this->mKnownFileClasses, self::$mRequireKnownClasses[$requirePath] );
+									$this->mKnownFunctions = array_merge( $this->mKnownFunctions, self::$mRequireKnownFunctions[$requirePath] );
+									$this->mConstants = array_merge( $this->mConstants, self::$mRequireKnownConstants[$requirePath] );
+								} else {
+									$newCheck = new CheckVars;
+									$newCheck->load( $requirePath, false );
+									$newCheck->execute();
+									/* Get the classes defined there */
+									$this->mKnownFileClasses = array_merge( $this->mKnownFileClasses, $newCheck->mKnownFileClasses );
+									$this->mKnownFunctions = array_merge( $this->mKnownFunctions, $newCheck->mKnownFunctions );
+									$this->mConstants = array_merge( $this->mConstants, $newCheck->mConstants );
+									self::$mRequireKnownClasses[$requirePath] = $newCheck->mKnownFileClasses;
+									self::$mRequireKnownFunctions[$requirePath] = $newCheck->mKnownFunctions;
+									self::$mRequireKnownConstants[$requirePath] = $newCheck->mConstants;
+								}
+							}
+							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+							continue;
+						}
+
+						if ( $token[0] == T_WHITESPACE )
+							continue;
+
 						if ( $token[0] == T_STRING_VARNAME ) {
 							$token[0] = T_VARIABLE;
 							$token[1] = '$' . $token[1];
 						}
-						if ( $token[0] == T_VARIABLE ) {
-							# $this->debug( "Found variable $token[1]" );
-
-							if ( ( $token[1] == '$this' ) && in_array( T_STATIC, $this->mFunctionQualifiers ) ) {
-								$this->warning( 'this-in-static', "Use of \$this in static method function {$this->mFunction} in line $token[2]" );
-							}
-
-							if ( $lastMeaningfulToken[0] == T_PAAMAYIM_NEKUDOTAYIM ) {
-								/* Class variable. No check for now */
-							} elseif ( $lastMeaningfulToken[0] == T_STRING ) {
-								$this->mLocalVariableTypes[ $token[1] ] = $lastMeaningfulToken[0];
-							} else {
-								if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
-										$this->mFunctionGlobals[ $token[1] ][0] ++;
-								} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
-									if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS && $runningQueuedFunctions ) {
-										// It will be a global passed in the use clause of the anonymous function
-										$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] ); // Register as global
-									} else {
-										$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
-									}
-								}
-							}
-						} elseif ( $token[0] == T_RETURN && $this->mInProfilingFunction ) {
-							if ( $this->mAfterProfileOut == 2 ) {
-								$this->mAfterProfileOut = 0;
-							} else {
-								$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
-							}
-						} elseif ( $token[0] == T_FUNCTION ) {
-							// We are already inside a function, so we must be entering an anonymous function
-							$this->anonymousFunction = array( 1, "function __anonymous_function_line" . $token[2] );
-							continue;
-						} elseif ( $token[0] == T_SWITCH ) {
-							if ( !$this->mInSwitch )
-								$this->mInSwitch = $this->mBraces;
-						} elseif ( ( $token[0] == T_PAAMAYIM_NEKUDOTAYIM ) && is_array( $lastMeaningfulToken ) && ( $lastMeaningfulToken[0] == T_VARIABLE ) ) {
-							if ( ( $lastMeaningfulToken[1] == '$self' ) || ( $lastMeaningfulToken[1] == '$parent' ) ) {
-								# Bug of r69904
-								$this->warning( '$self', "$lastMeaningfulToken[1]:: used in line $lastMeaningfulToken[2] It probably should have been " . substr( $lastMeaningfulToken[1], 1 ) . "::" );
-							}
-						} elseif ( ( $token[0] == T_STRING ) && ( is_array( $lastMeaningfulToken )
-								&& in_array( $lastMeaningfulToken[0], array( T_OBJECT_OPERATOR, T_PAAMAYIM_NEKUDOTAYIM ) ) ) ) {
-							# Class member or class constant
-							$currentToken[0] = self::CLASS_MEMBER;
-						} elseif ( $token[0] == T_STRING && is_array( $lastMeaningfulToken ) &&
-							( in_array( $lastMeaningfulToken[0], array( T_INSTANCEOF, T_NEW ) ) ) ) {
-							if ( interface_exists( $token[1], false ) ) {
-								$currentToken[0] = self::INTERFACE_NAME;
-							} else {
-								$this->checkClassName( $token );
-								$currentToken[0] = self::CLASS_NAME;
-							}
-						} elseif ( $token[0] == T_CONSTANT_ENCAPSED_STRING && is_array( $lastMeaningfulToken ) && $lastMeaningfulToken[1] == 'hideDeprecated()' ) {
-							$this->mHiddenDeprecatedCalls[] = substr( $token[1], 1, -1 );
-						} elseif ( in_array( $token[0], array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ) ) {
-							$this->mStatus = self::IN_FUNCTION_REQUIRE;
-							$requirePath = '';
-							continue;
-						}
-					}
-
-					if ( self::isMeaningfulToken( $token ) && ( $lastMeaningfulToken[0] == T_THROW ) ) {
-						if ( $token[0] == T_VARIABLE ) {
-							// Probably rethrowing from a catch, skip
-						} elseif ( $token[0] == T_NEW ) {
-							// Correct, a new class instance
-							// TODO: Verify it inherits from Exception
-						} else {
-							// We only want the last interpretation, see r77752
-							// throw Exception; -> Exception is a constant
-							// throw Exception("Foo"); -> Exception() is a function
-							// throw new Exception("Foo"); -> Exception is a class.
-
-							$this->warning( 'function-throw', "Not using new when throwing token {$token[1]} in line $token[2], function {$this->mFunction}" );
-						}
-					}
-
-					/* Try to guess the class of the variable */
-					if ( in_array( $token[0], array( T_OBJECT_OPERATOR, T_PAAMAYIM_NEKUDOTAYIM ) ) ) {
-						$currentToken['base'] = $lastMeaningfulToken;
-					} else
-					if ( ( ( $token[0] == T_STRING ) || ( $token[0] == self::CLASS_MEMBER ) )
-						&& is_array( $lastMeaningfulToken ) && isset( $lastMeaningfulToken['base'] ) ) {
-						$currentToken['base'] = $lastMeaningfulToken['base'];
-						$currentToken['class'] = $this->guessClassName( $lastMeaningfulToken['base'] );
-					}
-
-					if ( ( $token == '(' ) && is_array( $lastMeaningfulToken ) ) {
-						if ( $lastMeaningfulToken[0] == T_STRING ) {
-							$lastMeaningfulToken[0] = self::FUNCTION_NAME;
-							$this->checkDeprecation( $lastMeaningfulToken );
-							$this->checkFunctionName( $lastMeaningfulToken );
-							if ( $lastMeaningfulToken[1] == 'wfProfileIn' ) {
-								$this->mInProfilingFunction = true;
-								$this->mAfterProfileOut = 0;
-							} elseif ( $lastMeaningfulToken[1] == 'wfProfileOut' ) {
-								global $mwParentClasses;// echo "wfProfileOut $this->mClass " . ( isset( $mwParentClasses[ $this->mClass ] ) ? $mwParentClasses[ $this->mClass ] : "" ). "\n";
-								if ( ( isset( $mwParentClasses[ $this->mClass ] ) && $mwParentClasses[ $this->mClass ] == 'ImageHandler' ) ||
-									( $this->mClass == 'Hooks' && $this->mFunction == 'run' ) ) {
-									// Do not treat as profiling any more. ImageHandler sons have profile sections just for their wfShellExec(). wfRunHooks profiles each hook.
-									$this->mInProfilingFunction = false;
-								} else {
-									$this->mAfterProfileOut = 1;
-								}
-							}
-						} else if ( $lastMeaningfulToken[0] == self::CLASS_MEMBER ) {
-							$this->checkDeprecation( $lastMeaningfulToken );
-							
-							if ( $lastMeaningfulToken[1] == 'hideDeprecated' ) {
-								// $this->hideDeprecated() used in tests to knowingly test a deprecated function.
-								$lastMeaningfulToken[1] = 'hideDeprecated()';
-							}
-						}
-					}
-
-					/* Detect constants */
-					if ( self::isMeaningfulToken( $token ) && is_array( $lastMeaningfulToken ) &&
-							( $lastMeaningfulToken[0] == T_STRING ) && !self::isPhpConstant( $lastMeaningfulToken[1] ) ) {
-
-						if ( in_array( $token[0], array( T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE, T_INSTANCEOF ) ) ) {
-							$this->checkClassName( $lastMeaningfulToken );
-						} else {
-
-							if ( !defined( $lastMeaningfulToken[1] ) && !in_array( $lastMeaningfulToken[1], $this->mConstants ) && !self::inIgnoreList( $lastMeaningfulToken[1], self::$constantIgnorePrefixes ) ) {
-								$this->warning( 'undefined-constant', "Use of undefined constant $lastMeaningfulToken[1] in line $lastMeaningfulToken[2]" );
-							}
-						}
-					}
-					continue;
-
-				case self::IN_GLOBAL:
-					if ( $token == ',' )
-						continue;
-					if ( $token == ';' ) {
-						$this->mStatus = self::IN_FUNCTION;
-						continue;
-					}
-					if ( !self::isMeaningfulToken( $token ) )
-						continue;
-
-					if ( is_array( $token ) ) {
-						if ( $token[0] == T_VARIABLE ) {
-							if ( !$this->shouldBeGlobal( $token[1] ) && !$this->canBeGlobal( $token[1] ) ) {
-								$this->warning( 'global-names', "Global variable {$token[1]} in line {$token[2]}, function {$this->mFunction} does not follow coding conventions" );
-							}
+						if ( $token[0] == T_VARIABLE && $this->mStatus == self::IN_FUNCTION_REQUIRE ) {
 							if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
-								if ( !$this->mInSwitch ) {
-									$this->warning( 'double-globals', $token[1] . " marked as global again in line {$token[2]}, function {$this->mFunction}" );
-								}
+									$this->mFunctionGlobals[ $token[1] ][0] ++;
+							} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
+								$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
+							}
+						}
+						if ( $token == '.' ) {
+							if ( $requirePath == 'dirname(__FILE__)' || $requirePath == '__DIR__' ) {
+								$requirePath = dirname( $this->mFilename );
+							} elseif ( $requirePath == 'dirname(dirname(__FILE__))' || $requirePath == 'dirname(__DIR__)' ) {
+								$requirePath = dirname( dirname( $this->mFilename ) );
+							} elseif ( $requirePath == 'dirname(dirname(dirname(__FILE__)))' ) {
+								$requirePath = dirname( dirname( dirname( $this->mFilename ) ) );
+							}
+						} else if ( $token[0] == T_CURLY_OPEN || $token == '}' ) {
+							continue;
+						} else if ( !is_array( $token ) ) {
+							if ( $token == '(' && ( $requirePath == 'MWInit::compiledPath' || $requirePath == 'MWInit::interpretedPath' ) ) {
+								$requirePath = "$IP/";
+							} elseif ( ( $token != '(' ) || $requirePath != '' ) {
+								$requirePath .= $token[0];
+							}
+						} else if ( in_array( $token[0], array( T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE ) ) ) {
+							$requirePath .= trim( $token[1], '\'"' );
+						} else if ( $token[0] == T_VARIABLE ) {
+							if ( $token[1] == '$IP' || $token[1] == '$mwPath' ) {
+								$requirePath .= $IP;
+							} elseif ( $token[1] == '$dir' ) {
+								//  Scripts at phase3/maintenance/language/
+								$requirePath .= dirname( $this->mFilename );
+							} elseif ( $token[1] == '$wgStyleDirectory' ) {
+								$requirePath .= "$IP/skins";
+							} elseif ( in_array( $token[1], array( '$classFile', '$file', '$_fileName', '$fileName', '$filename' ) ) ) {
+								/* Maintenance.php lines 374 and 894 */
+								/* LocalisationCache.php, MessageCache.php, AutoLoader.php */
 							} else {
-								$this->checkGlobalName( $token[1] );
-								$this->mFunctionGlobals[ $token[1] ] = array( 0, $this->mBraces, $token[2] );
+								// $this->warning( "require uses unknown variable {$token[1]} in line {$token[2]}" );
+								$requirePath .= $token[1];
 							}
-							continue;
-						}
-					}
-					$this->error( $token );
-
-				case self::IN_INTERFACE:
-					if ( $lastMeaningfulToken[0] == T_INTERFACE )
-						$this->mKnownFileClasses[] = $token[1];
-
-					if ( $token == '{' ) {
-						$this->mBraces++;
-					} elseif ( $token == '}' ) {
-						$this->mBraces--;
-						if ( !$this->mBraces )
-							$this->mStatus = self::WAITING_FUNCTION;
-					}
-					continue;
-
-				case self::IN_REQUIRE_WAITING:
-				case self::IN_FUNCTION_REQUIRE:
-					if ( $token == ';' ) {
-						$requirePath = trim( $requirePath, ')("' );
-
-						if ( substr( $requirePath, 0, 8 ) == "PHPUnit/" ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( $requirePath == "Testing/Selenium.php" ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( substr( $requirePath, 0, 12 ) == "Net/Gearman/" ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( substr( $requirePath, -18 ) == "/LocalSettings.php" ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( substr( $requirePath, -18 ) == "/StartProfiler.php" ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( strpos( $requirePath, '/wmf-config/' ) !== false ) {
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( $requirePath == "Mail.php" ) { # PEAR mail
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-
-						if ( ( $requirePath == '' ) || ( !file_exists( $requirePath ) && $requirePath[0] != '/' ) ) {
-							/* Try prepending the script folder, for maintenance scripts (but see Maintenance.php:758) */
-							$requirePath = dirname( $this->mFilename ) . "/" . $requirePath;
-						}
-
-						if ( $requirePath == "Mail.php" || $requirePath == "Mail/mime.php" ) { # PEAR mail
-							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-							continue;
-						}
-						if ( !file_exists( $requirePath ) ) {
-							if ( strpos( $requirePath, '$' ) === false ) {
-								$this->warning( 'missing-requires', "Did not found the expected require of $requirePath" );
-							}
+						} elseif ( $token[0] == T_STRING && $token[1] == 'RUN_MAINTENANCE_IF_MAIN' ) {
+							$requirePath .= "$IP/maintenance/doMaintenance.php";
+						} elseif ( $token[0] == T_STRING && $token[1] == 'MW_CONFIG_FILE' ) {
+							$requirePath .= "$IP/LocalSettings.php";
 						} else {
-							$requirePath = realpath( $requirePath );
-							if ( isset( self::$mRequireKnownClasses[$requirePath] ) ) {
-								$this->mKnownFileClasses = array_merge( $this->mKnownFileClasses, self::$mRequireKnownClasses[$requirePath] );
-								$this->mKnownFunctions = array_merge( $this->mKnownFunctions, self::$mRequireKnownFunctions[$requirePath] );
-								$this->mConstants = array_merge( $this->mConstants, self::$mRequireKnownConstants[$requirePath] );
-							} else {
-								$newCheck = new CheckVars;
-								$newCheck->load( $requirePath, false );
-								$newCheck->execute();
-								/* Get the classes defined there */
-								$this->mKnownFileClasses = array_merge( $this->mKnownFileClasses, $newCheck->mKnownFileClasses );
-								$this->mKnownFunctions = array_merge( $this->mKnownFunctions, $newCheck->mKnownFunctions );
-								$this->mConstants = array_merge( $this->mConstants, $newCheck->mConstants );
-								self::$mRequireKnownClasses[$requirePath] = $newCheck->mKnownFileClasses;
-								self::$mRequireKnownFunctions[$requirePath] = $newCheck->mKnownFunctions;
-								self::$mRequireKnownConstants[$requirePath] = $newCheck->mConstants;
-							}
-						}
-						$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-						continue;
-					}
-
-					if ( $token[0] == T_WHITESPACE )
-						continue;
-
-					if ( $token[0] == T_STRING_VARNAME ) {
-						$token[0] = T_VARIABLE;
-						$token[1] = '$' . $token[1];
-					}
-					if ( $token[0] == T_VARIABLE && $this->mStatus == self::IN_FUNCTION_REQUIRE ) {
-						if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
-								$this->mFunctionGlobals[ $token[1] ][0] ++;
-						} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
-							$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
-						}
-					}
-					if ( $token == '.' ) {
-						if ( $requirePath == 'dirname(__FILE__)' || $requirePath == '__DIR__' ) {
-							$requirePath = dirname( $this->mFilename );
-						} elseif ( $requirePath == 'dirname(dirname(__FILE__))' || $requirePath == 'dirname(__DIR__)' ) {
-							$requirePath = dirname( dirname( $this->mFilename ) );
-						} elseif ( $requirePath == 'dirname(dirname(dirname(__FILE__)))' ) {
-							$requirePath = dirname( dirname( dirname( $this->mFilename ) ) );
-						}
-					} else if ( $token[0] == T_CURLY_OPEN || $token == '}' ) {
-						continue;
-					} else if ( !is_array( $token ) ) {
-						if ( $token == '(' && ( $requirePath == 'MWInit::compiledPath' || $requirePath == 'MWInit::interpretedPath' ) ) {
-							$requirePath = "$IP/";
-						} elseif ( ( $token != '(' ) || $requirePath != '' ) {
-							$requirePath .= $token[0];
-						}
-					} else if ( in_array( $token[0], array( T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE ) ) ) {
-						$requirePath .= trim( $token[1], '\'"' );
-					} else if ( $token[0] == T_VARIABLE ) {
-						if ( $token[1] == '$IP' || $token[1] == '$mwPath' ) {
-							$requirePath .= $IP;
-						} elseif ( $token[1] == '$dir' ) {
-							//  Scripts at phase3/maintenance/language/
-							$requirePath .= dirname( $this->mFilename );
-						} elseif ( $token[1] == '$wgStyleDirectory' ) {
-							$requirePath .= "$IP/skins";
-						} elseif ( in_array( $token[1], array( '$classFile', '$file', '$_fileName', '$fileName', '$filename' ) ) ) {
-							/* Maintenance.php lines 374 and 894 */
-							/* LocalisationCache.php, MessageCache.php, AutoLoader.php */
-						} else {
-							// $this->warning( "require uses unknown variable {$token[1]} in line {$token[2]}" );
 							$requirePath .= $token[1];
 						}
-					} elseif ( $token[0] == T_STRING && $token[1] == 'RUN_MAINTENANCE_IF_MAIN' ) {
-						$requirePath .= "$IP/maintenance/doMaintenance.php";
-					} elseif ( $token[0] == T_STRING && $token[1] == 'MW_CONFIG_FILE' ) {
-						$requirePath .= "$IP/LocalSettings.php";
-					} else {
-						$requirePath .= $token[1];
-					}
-					continue;
+						continue;
 
+				}
 			}
-		}
 
-		if ( count( $this->queuedFunctions ) > 0 ) {
-			$this->mTokens = token_get_all( "<?php " . array_shift( $this->queuedFunctions ) );
-			$runningQueuedFunctions = true;
-			continue;
-		}
-		break;
+			if ( count( $this->queuedFunctions ) > 0 ) {
+				$this->mTokens = token_get_all( "<?php " . array_shift( $this->queuedFunctions ) );
+				$runningQueuedFunctions = true;
+				continue;
+			}
+			break;
 		} while (1);
 
 		$this->checkPendingClasses();
