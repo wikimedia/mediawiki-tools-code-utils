@@ -996,6 +996,10 @@ class CheckVars {
 		echo " $msg\n";
 	}
 
+	function foundProblems() {
+		return $this->mProblemCount;
+	}
+
 	function debug( $msg ) {
 		if ( $this->mDebug ) {
 			echo "$msg\n";
@@ -1195,6 +1199,7 @@ foreach ( $argv as $arg ) {
 	}
 }
 
+$failure = false;
 $cv->preloadFiles( array( "$IP/includes/GlobalFunctions.php", "$IP/includes/normal/UtfNormalUtil.php" ) );
 
 foreach ( $argv as $arg ) {
@@ -1203,10 +1208,18 @@ foreach ( $argv as $arg ) {
 
 	$cv->load( $arg );
 	$cv->execute();
+
+	if ( $cv->foundProblems() ) {
+		$failure = true;
+	}
 }
 if ( $cv->getGenerateDeprecatedList( ) ) {
 	$cv->saveDeprecatedList( dirname( __FILE__ ) . "/deprecated.functions" );
 }
 if ( $cv->getGenerateParentList( ) ) {
 	$cv->saveParentList( dirname( __FILE__ ) . "/parent.classes" );
+}
+
+if ( $failure ) {
+	exit( 1 );
 }
