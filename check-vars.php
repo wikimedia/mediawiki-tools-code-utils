@@ -262,9 +262,20 @@ class CheckVars {
 			
 			'MemcachedPeclBagOStuff.php' => array( 'Memcached' ), // PECL Memcached extension
 			'SwiftFileBackend.php' => array(  // Requires MW extension and php-cloudfiles library
-				'AuthenticationException', 'CloudFilesException', 'NoSuchContainerException', 
-				'CDNNotEnabledException', 'BadContentTypeException', 'NoSuchObjectException', 'NonEmptyContainerException', 'IOException',
-				'CF_Authentication', 'CF_Async_Op', 'CF_Async_Op_Batch', 'CF_Connection', 'CF_Container', 'CF_Object' ),
+				 # Defined in SwiftCloudFile extension:
+				 #   SwiftCloudFiles/php-cloudfiles-wmf/cloudfiles_exceptions.php
+				 # itself derived from upstream:
+				 # https://github.com/rackspace/php-cloudfiles/blob/master/cloudfiles_exceptions.php
+				'CloudFilesException', 'AuthenticationException', 'InvalidResponseException', 'NonEmptyContainerException',
+				'NoSuchObjectException', 'NoSuchContainerException', 'NoSuchAccountException', 'MisMatchedChecksumException',
+				'IOException', 'CDNNotEnabledException', 'BadContentTypeException', 'InvalidUTF8Exception', 'ConnectionNotOpenException',
+
+				// Defined in https://github.com/rackspace/php-cloudfiles/blob/master/cloudfiles.php
+				'CF_Authentication', 'CF_Connection', 'CF_Container', 'CF_Object',
+
+				// Defined in mediawiki/extensions/SwiftCloudFiles/php-cloudfiles-wmf/cloudfiles_http.php
+				'CF_Async_Op', 'CF_Async_Op_Batch'
+				),
 			
 			'RedisBagOStuff.php' => array( 'Redis', 'RedisException' ),
 		);
