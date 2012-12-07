@@ -324,6 +324,7 @@ class CheckVars {
 
 	private function initVars() {
 		$this->mProblemCount = 0;
+		$this->anonymousFunction = false;
 
 		/* These are used even if it's shortcircuited */
 		$this->mKnownFileClasses = self::$mKnownFileClassesDefault;
@@ -371,6 +372,7 @@ class CheckVars {
 		$source = preg_replace( '/if \( isset\( \$_SERVER\[\'MW_COMPILED\'\] \) \) {\\s+require *\( \'core\/.*\' \);\\s+} else {/', 'if ( true ) {', $source );
 
 		$this->mTokens = token_get_all( $source );
+		$this->queuedFunctions = array();
 	}
 
 	static $functionQualifiers = array( T_ABSTRACT, T_PRIVATE, T_PUBLIC, T_PROTECTED, T_STATIC );
@@ -380,6 +382,7 @@ class CheckVars {
 		$currentToken = null;
 		$runningQueuedFunctions = false;
 
+		do {
 		foreach ( $this->mTokens as $token ) {
 			if ( self::isMeaningfulToken( $currentToken ) )
 				$lastMeaningfulToken = $currentToken;
@@ -418,6 +421,59 @@ class CheckVars {
 
 				// FIXME: Should be marked as defined only inside this T_IF
 				$this->mConstants[] = trim( $token[1], "'\"" );
+			}
+
+			if ( $this->anonymousFunction ) {
+				switch ( $this->anonymousFunction[0] ) {
+					case 1: // After 'function'
+						if ( $token[0] == '(' ) {
+							$this->anonymousFunction[1] .= " (";
+							$this->anonymousFunction[0] = 2;
+						}
+						break;
+					case 2: // In function parameters
+						$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
+						if ( $token[0] == ')' ) {
+							$this->anonymousFunction[0] = 3;
+						}
+						break;
+					case 3: // After function parameters
+						if ( $token[0] == T_USE ) {
+							$this->anonymousFunction[0] = 4;
+							$this->anonymousFunction[1] = rtrim( $this->anonymousFunction[1], ') ' );
+						} elseif ( $token[0] == '{' ) {
+							$this->anonymousFunction[0] = 5;
+							$this->anonymousFunction[1] .= " {";
+							$this->anonymousFunction[2] = 1;
+						}
+						break;
+					case 4: // In USE
+						if ( $token[0] != '(' ) {
+							$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
+						}
+						if ( $token[0] == T_VARIABLE ) {
+							// TODO: Check that it exists
+						} elseif ( $token[0] == '{' ) {
+							$this->anonymousFunction[0] = 5;
+							$this->anonymousFunction[2] = 1;
+						}
+						break;
+					case 5:
+						$this->anonymousFunction[1] .= is_array( $token ) ? $token[1] : $token;
+						if ( $token[0] == '{' || $token[0] == T_CURLY_OPEN || $token[0] == T_DOLLAR_OPEN_CURLY_BRACES ) {
+							$this->anonymousFunction[2]++;
+						} elseif ( $token[0] == '}' ) {
+							$this->anonymousFunction[2]--;
+
+							if ( $this->anonymousFunction[2] == 0 ) {
+								$this->queuedFunctions[] = $this->anonymousFunction[1];
+								$this->anonymousFunction = false;
+							}
+						}
+						break;
+				}
+
+				continue;
 			}
 
 			switch ( $this->mStatus ) {
@@ -578,7 +634,7 @@ class CheckVars {
 								} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
 									if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS && $runningQueuedFunctions ) {
 										// It will be a global passed in the use clause of the anonymous function
-										$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] );
+										$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] ); // Register as global
 									} else {
 										$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
 									}
@@ -591,8 +647,9 @@ class CheckVars {
 								$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
 							}
 						} elseif ( $token[0] == T_FUNCTION ) {
-							$this->warning( 'function-function', "Uh? Function inside function? A lambda function? (line $token[2])" );
-							return;
+							// We are already inside a function, so we must be entering an anonymous function
+							$this->anonymousFunction = array( 1, "function __anonymous_function_line" . $token[2] );
+							continue;
 						} elseif ( $token[0] == T_SWITCH ) {
 							if ( !$this->mInSwitch )
 								$this->mInSwitch = $this->mBraces;
@@ -860,6 +917,14 @@ class CheckVars {
 
 			}
 		}
+
+		if ( count( $this->queuedFunctions ) > 0 ) {
+			$this->mTokens = token_get_all( "<?php " . array_shift( $this->queuedFunctions ) );
+			$runningQueuedFunctions = true;
+			continue;
+		}
+		break;
+		} while (1);
 
 		$this->checkPendingClasses();
 		$this->checkPendingFunctions();
