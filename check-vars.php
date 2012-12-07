@@ -174,6 +174,7 @@ class CheckVars {
 	const IN_INTERFACE = 4;
 	const IN_REQUIRE_WAITING = 6;
 	const IN_FUNCTION_REQUIRE = 8;
+	const IN_FUNCTION_PARAMETERS = 9;
 
 	/* Token specializations */
 	const CLASS_NAME = -4;
@@ -473,7 +474,7 @@ class CheckVars {
 						continue;
 					if ( $token[0] == T_STRING ) {
 						$this->mFunction = $token[1];
-						$this->mStatus = self::IN_FUNCTION;
+						$this->mStatus = self::IN_FUNCTION_PARAMETERS;
 						$this->mBraces = 0;
 						$this->mInSwitch = 0;
 						$this->mInProfilingFunction = false;
@@ -501,6 +502,7 @@ class CheckVars {
 					$this->error( $token );
 
 				case self::IN_FUNCTION:
+				case self::IN_FUNCTION_PARAMETERS:
 					if ( ( $token == ';' ) && ( $this->mBraces == 0 ) ) {
 						if ( !in_array( T_ABSTRACT, $this->mFunctionQualifiers ) ) {
 							$this->error( $token );
@@ -511,6 +513,8 @@ class CheckVars {
 					}
 					if ( $token == '{' ) {
 						$this->mBraces++;
+						if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS )
+							$this->mStatus = self::IN_FUNCTION;
 					} elseif ( $token == '}' ) {
 						$this->mBraces--;
 						if ( $this->mInSwitch <= $this->mBraces )
@@ -566,7 +570,12 @@ class CheckVars {
 								if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
 										$this->mFunctionGlobals[ $token[1] ][0] ++;
 								} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
-									$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
+									if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS ) {
+										// It will be a global passed in the use clause of the anonymous function
+										$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] );
+									} else {
+										$this->warning( 'global-as-local', "{$token[1]} is used as local variable in line $token[2], function {$this->mFunction}" );
+									}
 								}
 							}
 						} elseif ( $token[0] == T_RETURN && $this->mInProfilingFunction ) {
