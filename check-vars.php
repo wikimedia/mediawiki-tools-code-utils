@@ -77,6 +77,9 @@ class CheckVars {
 	static $mKnownFunctionsDefault = array();
 	static $mConstantsDefault = array();
 
+	# Tokens which finish the execution of the current function
+	protected static $mExitTokens = array( T_RETURN, T_THROW, T_EXIT /* = exit + die */ );
+
 	# Ignore constants with these prefixes:
 	static $constantIgnorePrefixes = array( "PGSQL_", "OCI_", "SQLT_", "DB2_", "XMLREADER_", "SQLSRV_", "MCRYPT_" );
 	# Ignore functions with these prefixes:
@@ -127,7 +130,8 @@ class CheckVars {
 		'double-;' => true,
 		'this-in-static' => true,
 		'missed-docblock' => false,
-		'profileout' => true,
+		'profileout' => false,
+		'matchingprofiles' => true,
 		'evil-@' => false,
 		'global-in-switch' => true,
 		'global-as-local' => true,
@@ -287,6 +291,9 @@ class CheckVars {
 			'RedisConnectionPool.php' => array( 'Redis', 'RedisException' ),
 		);
 
+	/* ApiBase has some profile methods */
+	protected static $mMethodsSkippedProfileChecks = array( 'ApiBase::profileIn', 'ApiBase::profileDBIn', 'ApiBase::profileOut', 'ApiBase::profileDBOut' );
+
 	function setGenerateDeprecatedList( $bool = true ) {
 		$this->generateDeprecatedList = $bool;
 	}
@@ -324,6 +331,10 @@ class CheckVars {
 
 	private function initVars() {
 		$this->mProblemCount = 0;
+		$this->mCallStack = array();
+		$this->mProfileStack = array();
+		$this->mProfileStackIndex = 0;
+		$this->mConditionalProfileOutCount = 0;
 		$this->anonymousFunction = false;
 
 		/* These are used even if it's shortcircuited */
@@ -536,6 +547,7 @@ class CheckVars {
 							continue;
 						if ( $token[0] == T_STRING ) {
 							$this->mFunction = $token[1];
+							$this->mMethod = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
 							$this->mStatus = self::IN_FUNCTION_PARAMETERS;
 							$this->mBraces = 0;
 							$this->mInSwitch = 0;
@@ -545,7 +557,7 @@ class CheckVars {
 							$this->mLocalVariableTypes = array();
 							$this->mHiddenDeprecatedCalls = array(); // Deprecated functions called which we should not warn about
 							$currentToken[0] = self::FUNCTION_DEFINITION;
-							$this->mKnownFunctions[] = $this->mClass ? $this->mClass . "::" . $this->mFunction : $this->mFunction;
+							$this->mKnownFunctions[] = $this->mMethod;
 
 							if ( $this->generateDeprecatedList && in_array( self::FUNCTION_DEPRECATED, $this->mFunctionQualifiers ) ) {
 								if ( ( substr( $this->mFunction, 0, 2 ) != "__" ) ) {
@@ -588,16 +600,29 @@ class CheckVars {
 									$this->warning( 'profileout', "Reached end of $this->mClass::$this->mFunction with last statement not being wfProfileOut" );
 								}
 
+								if ($this->mProfileStackIndex != 0) {
+									$missingCalls = array();
+									for ($i = $this->mProfileStackIndex; $i > 0; $i--) {
+										$missingCalls[] = 'wfProfileOut(' . $this->mProfileStack[$i - 1]['args'] . ')';
+									}
+
+									if ( !in_array( $this->mMethod, self::$mMethodsSkippedProfileChecks ) ) {
+										$this->warning( 'matchingprofiles', "Reached end of function $this->mFunction without calling " . implode( ', ', $missingCalls ) );
+									}
+								}
+								$this->mProfileStackIndex = 0;
+
 								$this->mStatus = self::WAITING_FUNCTION;
 								$this->mFunctionQualifiers = array();
 							}
+							$this->mConditionalProfileOutCount = 0;
 						} elseif ( $token == ';' && $this->mInProfilingFunction ) {
 							// Check that there's just a return after wfProfileOut.
 							if ( $this->mAfterProfileOut == 1 ) {
 								$this->mAfterProfileOut = 2;
 							} elseif ( $this->mAfterProfileOut == 2 ) {
 								// Set to 3 in order to bail out at the return.
-								// This way we don't complay about missing return in internal wfProfile sections.
+								// This way we don't complain about missing return in internal wfProfile sections.
 								$this->mAfterProfileOut = 3;
 							}
 						} elseif ( $token == '@' ) {
@@ -640,7 +665,16 @@ class CheckVars {
 										}
 									}
 								}
-							} elseif ( $token[0] == T_RETURN && $this->mInProfilingFunction ) {
+							} elseif ( in_array( $token[0], self::$mExitTokens ) && $this->mInProfilingFunction ) {
+								if ($this->mProfileStackIndex - $this->mConditionalProfileOutCount != 0) {
+									$missingCalls = array();
+									for ($i = $this->mProfileStackIndex - $this->mConditionalProfileOutCount; $i > 0; $i--) {
+										$missingCalls[] = 'wfProfileOut(' . $this->mProfileStack[$i - 1]['args'] . ')';
+									}
+									$this->warning( 'matchingprofiles', "$token[1] in line $token[2] without calling " . implode( ', ', $missingCalls ) );
+								}
+								$this->mConditionalProfileOutCount = 0;
+
 								if ( $this->mAfterProfileOut == 2 ) {
 									$this->mAfterProfileOut = 0;
 								} else {
@@ -710,6 +744,7 @@ class CheckVars {
 								$lastMeaningfulToken[0] = self::FUNCTION_NAME;
 								$this->checkDeprecation( $lastMeaningfulToken );
 								$this->checkFunctionName( $lastMeaningfulToken );
+								$this->mCallStack[] = array( 'function' => $lastMeaningfulToken, 'args' => '' );
 								if ( $lastMeaningfulToken[1] == 'wfProfileIn' ) {
 									$this->mInProfilingFunction = true;
 									$this->mAfterProfileOut = 0;
@@ -730,6 +765,53 @@ class CheckVars {
 									// $this->hideDeprecated() used in tests to knowingly test a deprecated function.
 									$lastMeaningfulToken[1] = 'hideDeprecated()';
 								}
+							}
+						} elseif ( count( $this->mCallStack ) ) {
+							if ( $token !== ')' ) {
+								$this->mCallStack[ count( $this->mCallStack ) - 1 ]['args'] .= ( is_array( $token ) ? $token[1] : $token );
+							} else { // $token == )
+								$lastCall = array_pop( $this->mCallStack );
+								$lastCall['braceLevel'] = $this->mBraces;
+
+								/* Special processing for some functions */
+								switch ( $lastCall['function'][1] ) {
+									case 'wfProfileIn':
+										$this->mProfileStack[$this->mProfileStackIndex++] = $lastCall;
+										array_push( $this->mProfileStack, $lastCall );
+										break;
+									case 'wfProfileOut':
+										$index = $this->mProfileStackIndex - $this->mConditionalProfileOutCount - 1;
+
+										if ( $index < 0 ) { // Empty stack
+											if ( !in_array( $this->mMethod, self::$mMethodsSkippedProfileChecks ) ) {
+												$this->warning( 'matchingprofiles', "Call to wfProfileOut( {$lastCall['args']} ) in line $lastMeaningfulToken[2] without a previous wfProfileIn()" );
+											}
+										} else {
+											$profilein = $this->mProfileStack[$index];
+
+											if ( $profilein['args'] !== $lastCall['args'] ) {
+												$profilingName = $profilein['args'];
+
+												if ( !( $this->mMethod == 'Parser::braceSubstitution' && $lastCall['args'] == ' $titleProfileIn ' ) ) {
+													$this->warning( 'matchingprofiles', "Call to wfProfileOut( {$lastCall['args']} ) in line $lastMeaningfulToken[2] but expecting wfProfileOut( $profilingName ) from wfProfileIn() of line " . $profilein['function'][2] );
+												}
+											}
+
+											if ( $profilein['braceLevel'] < $this->mBraces ) {
+												// Keep the ProfileIn in the stack
+												$this->mConditionalProfileOutCount++;
+											} else {
+												if ( $this->mConditionalProfileOutCount ) {
+													$this->warning( 'matchingprofiles', "Internal error in local variables for ConditionalProfileOut" );
+													$this->mConditionalProfileOutCount = 0;
+												}
+												array_pop( $this->mProfileStack );
+												$this->mProfileStackIndex--;
+											}
+										}
+								}
+
+								// $this->debug( "Call to " . $lastCall['function'][1] . "(" . $lastCall['args'] . ")" );
 							}
 						}
 
