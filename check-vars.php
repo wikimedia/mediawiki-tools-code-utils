@@ -131,7 +131,9 @@ class CheckVars {
 		'this-in-static' => true,
 		'missed-docblock' => false,
 		'profileout' => false,
+		'profileout-throw' => false,
 		'matchingprofiles' => true,
+		'matchingprofiles-throw' => false, // Expect to run the wfProfileOut() before throwing an exception
 		'evil-@' => false,
 		'global-in-switch' => true,
 		'global-as-local' => true,
@@ -671,14 +673,14 @@ class CheckVars {
 									for ($i = $this->mProfileStackIndex - $this->mConditionalProfileOutCount; $i > 0; $i--) {
 										$missingCalls[] = 'wfProfileOut(' . $this->mProfileStack[$i - 1]['args'] . ')';
 									}
-									$this->warning( 'matchingprofiles', "$token[1] in line $token[2] without calling " . implode( ', ', $missingCalls ) );
+									$this->warning( $token[0] == T_THROW ? 'matchingprofiles-throw' : 'matchingprofiles', "$token[1] in line $token[2] without calling " . implode( ', ', $missingCalls ) );
 								}
 								$this->mConditionalProfileOutCount = 0;
 
 								if ( $this->mAfterProfileOut == 2 ) {
 									$this->mAfterProfileOut = 0;
 								} else {
-									$this->warning( 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
+									$this->warning( $token[0] == T_THROW ? 'profileout-throw' : 'profileout', "$token[1] in line $token[2] is not preceded by wfProfileOut" );
 								}
 							} elseif ( $token[0] == T_FUNCTION ) {
 								// We are already inside a function, so we must be entering an anonymous function
