@@ -54,6 +54,7 @@ $wgAutoloadLocalClasses += array(
 		'PEAR' => 'pear',
 		'Normalizer' => 'pecl intl',
 		'Mail' => 'pear Mail',
+		'Mail_mime' => 'pear Mail',
 
 		'UserDupes' => 'maintenance/userDupes.inc',
 		'DeleteDefaultMessages' => 'maintenance/deleteDefaultMessages.php',
@@ -765,6 +766,10 @@ class CheckVars {
 							$requirePath = dirname( $this->mFilename ) . "/" . $requirePath;
 						}
 
+						if ( $requirePath == "Mail.php" || $requirePath == "Mail/mime.php" ) { # PEAR mail
+							$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
+							continue;
+						}
 						if ( !file_exists( $requirePath ) ) {
 							if ( strpos( $requirePath, '$' ) === false ) {
 								$this->warning( 'missing-requires', "Did not found the expected require of $requirePath" );
