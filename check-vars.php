@@ -151,7 +151,7 @@ class CheckVars {
 		'missing-requires' => true,
 		'deprecated-calls' => true,
 		'hidden-deprecated-calls' => false,
-		'deprecated-might' => true,
+		'deprecated-might' => false, // Too many false positives. Reenable later.
 		'poisoned-function' => true,
 		'error' => true,
 		# 'help' keyword is reserved!!
@@ -1116,6 +1116,7 @@ class CheckVars {
 			'$undoRev' => 'Revision', '$undoafterRev' => 'Revision',
 			'$msg' => 'Message',
 			'$stash' => 'UploadStash',
+			'$handler' => 'ContentHandler',
 		);
 		static $wellKnownMembers = array(
 			'db' => 'DatabaseBase', 'dbw' => 'DatabaseBase',
