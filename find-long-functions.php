@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 /**
  * Simple tool to count the number of line in PHP functions.

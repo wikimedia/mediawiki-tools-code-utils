@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """ Given a list of files containing class definitions in the order of their class
 hierarchy, this program will print the class names and function names that will
 actually get executed when you call $this->function() """
