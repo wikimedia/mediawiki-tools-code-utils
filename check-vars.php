@@ -90,6 +90,8 @@ class CheckVars {
 			"imagedestroy", "imageinterlace", "imagejpeg",
 			# readline is usualy not available since linking libreadline with PHP breaks GPL license
 			"readline",
+			# GlobalFunctions.php conditionally uses bcmath in wfBaseConvert since 9b9daad
+			'bcmul', 'bcadd', 'bccomp', 'bcdiv', 'bcmod',
 		);
 	# Functions to be avoided. Insert in lowercase.
 	static $poisonedFunctions = array(
