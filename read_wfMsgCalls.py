@@ -70,7 +70,7 @@ messageFunctions = [ "wfMsg", "wfMessage", "wfMessageFallback", "wfMsgExt", "wfM
 # MESSAGES FOLDERS AND FILES
 
 # Folders (let the # to include messagesIndividualFiles)
-messagesFolders = { 'phase3': [ 'languages/messages' ], 'extensions': [  ], '#':'#' }
+messagesFolders = { 'phase3': [ 'languages/messages' ], 'extensions': [  ], '#': '#' }
 
 # Exclude these files
 messagesExcludeFiles = []
@@ -97,7 +97,11 @@ codeIndividualFiles = [ "languages/Language.php", "languages/LanguageConverter.p
 # Read the i18n files #
 # # # # # # # # # # # #
 
-import os, os.path, re, csv, subprocess
+import os
+import os.path
+import re
+import csv
+import subprocess
 
 currentFolder = os.getcwd()
 os.chdir( baseFolder )
@@ -142,8 +146,8 @@ for messagesFolderType in messagesFolders:
 			# Read the PHP $messages variable
 			p = subprocess.Popen( 'php', shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True )
 			print >>p.stdin, '<?php'
-			print >>p.stdin, "require( '"+os.path.join( 'includes', 'Defines.php' )+"' );"
-			print >>p.stdin, "require( '"+os.path.join( messagesFolder, filename )+"' );"
+			print >>p.stdin, "require( '" + os.path.join( 'includes', 'Defines.php' ) + "' );"
+			print >>p.stdin, "require( '" + os.path.join( messagesFolder, filename ) + "' );"
 			print >>p.stdin, """
 				if( isset( $messages ) && is_array( $messages ) && count( $messages ) > 0 ) {
 					if( is_array( current( $messages ) ) ) {
@@ -163,9 +167,9 @@ for messagesFolderType in messagesFolders:
 
 			if len(messages) == 0:
 				if messagesFolderType == 'phase3' and filename[:8] == 'Messages':
-					print 'Core language '+lang+' doesn’t have a $message variable in '+filename+' or is empty.'
+					print 'Core language ' + lang + ' doesn’t have a $message variable in ' + filename + ' or is empty.'
 				else:
-					print 'File '+filename+' doesn’t have a $message variable or is empty.'
+					print 'File ' + filename + ' doesn’t have a $message variable or is empty.'
 				continue
 
 			# Retrieve the result and put it in a list of list
@@ -235,17 +239,17 @@ for folder in codeFolders:
 			# Remove the false positive in block comments (some could remain if
 			# in single-line comments)
 			incomment = False
-			for c in range(len(content)-1):
+			for c in range(len(content) - 1):
 				if c == len(content):
 					break
-				if content[c] == '/' and content[c+1] == '*':
+				if content[c] == '/' and content[c + 1] == '*':
 					incomment = True
-				if content[c] == '*' and content[c+1] == '/':
+				if content[c] == '*' and content[c + 1] == '/':
 					incomment = False
 				if content[c] == 'w' and incomment:
-					f = re.search( '^'+msgFunctionsSoft, content[c:c+msgFunctionsMaxLength] )
-					if f != None:
-						content = content[:c] + content[c+f.end():]
+					f = re.search( '^' + msgFunctionsSoft, content[c:c + msgFunctionsMaxLength] )
+					if f is not None:
+						content = content[:c] + content[c + f.end():]
 
 			# Get the indexes of the beginning of lines (to compute after the
 			# line number)
@@ -260,20 +264,20 @@ for folder in codeFolders:
 			for m in re.finditer( msgFunctions, content, re.S ):
 
 				i = -1
-				while m.start()-indexOfBeginningOfLines[i] < 0:
+				while m.start() - indexOfBeginningOfLines[i] < 0:
 					i = i - 1
 
 				# Search the key once we recognized the message
 				key = ''
 				k = re.search( "^\(\s*'([a-zA-Z0-9_-]+?)'\s*(?:,|\))", m.group(2) )
-				if k != None:
+				if k is not None:
 					key = k.group(1)
 				else:
 					k = re.search( '^\(\s*"([a-zA-Z0-9_-]+?)"\s*(?:,|\))', m.group(2) )
-					if k != None:
+					if k is not None:
 						key = k.group(1)
 
-				wfMsgCall = [ os.path.join( directory[0], filename ), len(indexOfBeginningOfLines)+i+1, m.group(1), key, m.group(0) ]
+				wfMsgCall = [ os.path.join( directory[0], filename ), len(indexOfBeginningOfLines) + i + 1, m.group(1), key, m.group(0) ]
 
 				# You must have the same number of opening and closing
 				# parenthesis
@@ -291,7 +295,7 @@ for folder in codeFolders:
 
 						pos = pos + res.end()
 
-						if res != None:
+						if res is not None:
 							wfMsgCall[4] = wfMsgCall[4] + res.group(0)
 						else:
 							raise Exception( 'parenthesis expected' )
