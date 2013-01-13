@@ -1,22 +1,24 @@
 #!/usr/bin/env python
-""" Given a list of files containing class definitions in the order of their class
-hierarchy, this program will print the class names and function names that will
-actually get executed when you call $this->function() """
+""" Given a list of files containing class definitions in the order of their
+class hierarchy, this program will print the class names and function names
+that will actually get executed when you call $this->function() """
 
-import sys, re
+import re
+import sys
 
 functions = {}
 classes = {}
 cl = None
 for fn in sys.argv[1:]:
     for line in open(fn):
-        match = re.match(r'(abstract\s+)?class\s+(.*?)\s+(extends\s+(.*?)\s+)?\{', line)
+        matcher = r'(abstract\s+)?class\s+(.*?)\s+(extends\s+(.*?)\s+)?\{'
+        match = re.match(matcher, line)
         if match:
             cl = match.group(2)
             supercl = match.group(4)
             classes[cl] = supercl
             if supercl:
-                classes[supercl] # superclass should already exist
+                classes[supercl]  # superclass should already exist
 
         match = re.match(r'\s*(public\s+|static\s+)?function\s+(.*?)\(', line)
         if match:
@@ -27,5 +29,4 @@ for fn in sys.argv[1:]:
 keys = functions.keys()
 keys.sort()
 for key in keys:
-    print key,functions[key]
-
+    print key, functions[key]
