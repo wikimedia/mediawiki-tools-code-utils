@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vim: set noexpandtab:
 
 #
 # Two small tools to analyse the keys of the i18n messages of MediaWiki
