@@ -384,6 +384,11 @@ class CheckVars {
 		/* Skip HipHop specific requires */
 		$source = preg_replace( '/if \( isset\( \$_SERVER\[\'MW_COMPILED\'\] \) \) {\\s+require *\( \'core\/.*\' \);\\s+} else {/', 'if ( true ) {', $source );
 
+		if ( basename( $file ) == 'User.php' ) {
+			// The check for $row->user_options (removed in 1.19, eda06e859) guards the call to the deprecated User::decodeOptions()
+			$source = preg_replace( '/if \( isset\( \$row->user_options \) \) \{\r?\n.*?\r?\n\t*\}/', "\n\n", $source );
+		}
+
 		$this->mTokens = token_get_all( $source );
 		$this->queuedFunctions = array();
 	}
