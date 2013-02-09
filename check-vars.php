@@ -283,6 +283,8 @@ class CheckVars {
 				),
 			
 			'RedisBagOStuff.php' => array( 'Redis', 'RedisException' ),
+			'JobQueueRedis.php' => array( 'Redis', 'RedisException' ),
+			'RedisConnectionPool.php' => array( 'Redis', 'RedisException' ),
 		);
 
 	function setGenerateDeprecatedList( $bool = true ) {
