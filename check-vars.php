@@ -378,6 +378,7 @@ class CheckVars {
 	function execute() {
 		global $IP;
 		$currentToken = null;
+		$runningQueuedFunctions = false;
 
 		foreach ( $this->mTokens as $token ) {
 			if ( self::isMeaningfulToken( $currentToken ) )
@@ -575,7 +576,7 @@ class CheckVars {
 								if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
 										$this->mFunctionGlobals[ $token[1] ][0] ++;
 								} elseif ( $this->shouldBeGlobal( $token[1] ) ) {
-									if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS ) {
+									if ( $this->mStatus == self::IN_FUNCTION_PARAMETERS && $runningQueuedFunctions ) {
 										// It will be a global passed in the use clause of the anonymous function
 										$this->mFunctionGlobals[ $token[1] ] = array( 0, 0, $token[2] );
 									} else {
