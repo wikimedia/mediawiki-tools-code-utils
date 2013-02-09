@@ -83,7 +83,7 @@ class CheckVars {
 	# Ignore constants with these prefixes:
 	static $constantIgnorePrefixes = array( "PGSQL_", "OCI_", "SQLT_", "DB2_", "XMLREADER_", "SQLSRV_", "MCRYPT_" );
 	# Ignore functions with these prefixes:
-	static $functionIgnorePrefixes = array( "pg_", "oci_", "db2_", "gmp_", "sqlsrv_", "exif_", "fss_", "tidy_",
+	static $functionIgnorePrefixes = array( "pg_", "oci_", "db2_", "sqlsrv_", "exif_", "fss_", "tidy_",
 			"apc_", "eaccelerator_", "xcache_", "wincache_", "apache_", "xdiff_", "wikidiff2_", "parsekit_",
 			"wddx_", "setproctitle", "utf8_", "normalizer_", "dba_", "pcntl_", "finfo_", "mime_content_type", "curl_",
 			"openssl_", "mcrypt_",
@@ -93,9 +93,22 @@ class CheckVars {
 			"imagedestroy", "imageinterlace", "imagejpeg",
 			# readline is usualy not available since linking libreadline with PHP breaks GPL license
 			"readline",
-			# GlobalFunctions.php conditionally uses bcmath in wfBaseConvert since 9b9daad
-			'bcmul', 'bcadd', 'bccomp', 'bcdiv', 'bcmod',
 		);
+
+	static $extensionFunctions = array(
+		 # GlobalFunctions.php conditionally uses bcmath in wfBaseConvert since 9b9daad
+		 # List at http://php.net/manual/en/book.bc.php
+		'bcmath' => array( 'bcadd', 'bccomp', 'bcdiv', 'bcmod', 'bcmul', 'bcpow', 'bcpowmod', 'bcscale', 'bcsqrt', 'bcsub' ),
+		# http://www.php.net/gmp
+		'gmp' => array( 'gmp_abs', 'gmp_add', 'gmp_and', 'gmp_clrbit', 'gmp_cmp', 'gmp_com', 'gmp_div_q',
+			'gmp_div_qr', 'gmp_div_r', 'gmp_div', 'gmp_divexact', 'gmp_fact', 'gmp_gcd', 'gmp_gcdext',
+			'gmp_hamdist', 'gmp_init', 'gmp_intval', 'gmp_invert', 'gmp_jacobi', 'gmp_legendre',
+			'gmp_mod', 'gmp_mul', 'gmp_neg', 'gmp_nextprime', 'gmp_or', 'gmp_perfect_square',
+			'gmp_popcount', 'gmp_pow', 'gmp_powm', 'gmp_prob_prime', 'gmp_random', 'gmp_scan0',
+			'gmp_scan1', 'gmp_setbit', 'gmp_sign', 'gmp_sqrt', 'gmp_sqrtrem', 'gmp_strval',
+			'gmp_sub', 'gmp_testbit', 'gmp_xor' ),
+	);
+
 	# Functions to be avoided. Insert in lowercase.
 	static $poisonedFunctions = array(
 		'addslashes' => 'Replace with Database::addQuotes/strencode',
@@ -153,6 +166,8 @@ class CheckVars {
 		'hidden-deprecated-calls' => false,
 		'deprecated-might' => false, // Too many false positives. Reenable later.
 		'poisoned-function' => true,
+		'extension-not-loaded' => true,
+		'internal-error' => true,
 		'error' => true,
 		# 'help' keyword is reserved!!
 		);
@@ -338,6 +353,7 @@ class CheckVars {
 		$this->mProfileStackIndex = 0;
 		$this->mConditionalProfileOutCount = 0;
 		$this->anonymousFunction = false;
+		$this->mExtensionFunctions = array();
 
 		/* These are used even if it's shortcircuited */
 		$this->mKnownFileClasses = self::$mKnownFileClassesDefault;
@@ -387,6 +403,9 @@ class CheckVars {
 		if ( basename( $file ) == 'User.php' ) {
 			// The check for $row->user_options (removed in 1.19, eda06e859) guards the call to the deprecated User::decodeOptions()
 			$source = preg_replace( '/if \( isset\( \$row->user_options \) \) \{\r?\n.*?\r?\n\t*\}/', "\n\n", $source );
+		}
+		if ( basename( $file ) == 'trackBlobs.php' && preg_match( '/if \( extension_loaded\( \'([^\']+)\' \) \) \{\r?\n\t*(\$this->[A-Za-z]+) = true;/', $source, $m ) ) {
+			$source = preg_replace( '/if \( ' . preg_quote( $m[2] ) . ' \) /', "if ( " . $m[2] . " && extension_loaded( '" . $m[1] . "' ) ", $source );
 		}
 
 		$this->mTokens = token_get_all( $source );
@@ -601,6 +620,13 @@ class CheckVars {
 							if ( $this->mInSwitch <= $this->mBraces )
 								$this->mInSwitch = 0;
 
+							if ( count( $this->mExtensionFunctions ) ) {
+								foreach ( $this->mExtensionFunctions as $name => $level ) {
+									if ( $level > $this->mBraces )
+										unset( $this->mExtensionFunctions[$name] );
+								}
+							}
+
 							$this->purgeGlobals();
 							if ( ! $this->mBraces ) {
 								if ( $this->mInProfilingFunction && $this->mAfterProfileOut & 1 ) {
@@ -645,9 +671,14 @@ class CheckVars {
 								// T_STRING_VARNAME is documented as ${a but it's the text inside the braces
 								$this->mBraces++;
 							}
+							if ( $lastMeaningfulToken == '!' ) {
+								$token['negated'] = true;
+								$currentToken = $token;
+							}
 							if ( $token[0] == T_STRING_VARNAME ) {
 								$token[0] = T_VARIABLE;
 								$token[1] = '$' . $token[1];
+								$currentToken = $token;
 							}
 							if ( $token[0] == T_VARIABLE ) {
 								# $this->debug( "Found variable $token[1]" );
@@ -816,6 +847,23 @@ class CheckVars {
 												$this->mProfileStackIndex--;
 											}
 										}
+										break;
+
+									case 'extension_loaded':
+										/**
+										 * Assumption: extension_loaded( foo ) will only be called inside a conditional.
+										 * If negated, the conditional will contain a return or throw, in order to use 
+										 * the extension in the rest of the function body.
+										 * Else the extension will only be used inside the conditional.
+										 */
+										$extensionName = trim( $lastCall['args'], " \"'" );
+										$level = isset( $lastCall['function']['negated'] ) && $lastCall['function']['negated'] ? $this->mBraces : $this->mBraces + 1;
+										if ( isset( self::$extensionFunctions[$extensionName] ) ) {
+											foreach ( self::$extensionFunctions[$extensionName] as $name ) {
+												$this->mExtensionFunctions[$name] = $level;
+											}
+										}
+										break;
 								}
 
 								// $this->debug( "Call to " . $lastCall['function'][1] . "(" . $lastCall['args'] . ")" );
@@ -954,6 +1002,7 @@ class CheckVars {
 						if ( $token[0] == T_STRING_VARNAME ) {
 							$token[0] = T_VARIABLE;
 							$token[1] = '$' . $token[1];
+							$currentToken = $token;
 						}
 						if ( $token[0] == T_VARIABLE && $this->mStatus == self::IN_FUNCTION_REQUIRE ) {
 							if ( isset( $this->mFunctionGlobals[ $token[1] ] ) ) {
@@ -1074,6 +1123,14 @@ class CheckVars {
 			if ( function_exists( $token[1] ) ) {
 				return;
 			}
+
+			if ( isset( $this->mExtensionFunctions[ $token[1] ] ) ) {
+				if ( $this->mExtensionFunctions[ $token[1] ] > $this->mBraces ) {
+					$this->warning( 'internal-error', "mExtensionFunctions contains entries for higher brace levels" );
+				}
+				return;
+			}
+
 			if ( in_array( $token[1], $this->mKnownFunctions ) ) {
 				return;
 			}
@@ -1083,6 +1140,13 @@ class CheckVars {
 			}
 
 			if ( $warn == 'now' ) {
+				foreach ( self::$extensionFunctions as $extensionName => $functions) {
+					if ( in_array( $token[1], $functions ) ) {
+						$this->warning( 'extension-not-loaded', "Function {$token[1]} called in line {$token[2]} belongs to extension $extensionName, but there was no check that $extensionName was available." );
+						return;
+					}
+				}
+
 				$this->warning( 'missing-function', "Unavailable function {$token[1]} in line {$token[2]}" );
 			} else if ( $warn == 'defer' ) {
 				// Defer to the end of the file
