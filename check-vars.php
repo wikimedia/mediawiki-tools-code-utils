@@ -955,7 +955,7 @@ class CheckVars {
 								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
 								continue;
 							}
-							if ( $requirePath == "Mail.php" ) { # PEAR mail
+							if ( $requirePath == "Mail.php" || $requirePath == "Mail/mime.php" ) { # PEAR mail
 								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
 								continue;
 							}
@@ -965,10 +965,6 @@ class CheckVars {
 								$requirePath = dirname( $this->mFilename ) . "/" . $requirePath;
 							}
 
-							if ( $requirePath == "Mail.php" || $requirePath == "Mail/mime.php" ) { # PEAR mail
-								$this->mStatus = $this->mStatus - self::IN_REQUIRE_WAITING;
-								continue;
-							}
 							if ( !file_exists( $requirePath ) ) {
 								if ( strpos( $requirePath, '$' ) === false ) {
 									$this->warning( 'missing-requires', "Did not found the expected require of $requirePath" );
