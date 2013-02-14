@@ -3,25 +3,22 @@
 $gerrit = "gerrit.wikimedia.org";
 $baseUrl = "ssh://$gerrit:29418"; // "https://$gerrit/r/p" if you have no ssh access
 
-$skipRepositories = array( 'test*', 'operations*', 'analytics*', 'labs*', 'integration*', 'wikimedia*', 'mediawiki/tools*', 'mediawiki/packages*' );
+$skipRepositories = array( 'test*', 'operations*', 'analytics*', 'labs*', 'integration*', 'wikimedia*', 'mediawiki/packages*', 'All-Projects', 'apps*', 'search*', 'translatewiki*', 'webplatform.org*', 'qa*', 'glam*' );
 
 // curl included with Linux or msysgit (Win)
-$command = 'curl -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8"' .
-	' -X POST -d "{\"jsonrpc\":\"2.0\",\"method\":\"visibleProjects\",\"params\":[],\"id\":1}"' .
-	" https://$gerrit/r/gerrit/rpc/ProjectAdminService";
+$command = 'curl -H "Accept: application/json; Content-Type: application/json; charset=utf-8" -X GET ' . "https://$gerrit/r/projects/?d";
 
 $totalStart = microtime( true );
 $p = popen( $command, "r" );
 $json = stream_get_contents( $p );
 pclose( $p );
 
-$rpc = json_decode( $json );
-$projects = $rpc->result;
+$json = str_replace( ")]}'", '', $json ); // Fix leading text that breaks json_decode
 
-//print_r( $projects );
+$projects = json_decode( $json );
 
-foreach ( $projects->projects as $project ) {
-	$repo = $project->name->name;
+foreach ( $projects as $project ) {
+	$repo = urldecode( $project->id );
 	print "$repo\n";
 
 	if ( strpos( strtolower( $project->description ), "deleted" ) !== false ) {
