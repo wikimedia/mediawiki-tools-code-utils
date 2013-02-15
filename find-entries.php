@@ -57,10 +57,14 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+	} elseif ( $tokens[$i][0] == T_DIR ) {
+		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		if ( $tokens[$i] != '.' ) return false;
+		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 	}
 
 	$filetoken = $tokens[$i];
-	if ( ( $filetoken[0] == T_STRING ) && ( $filetoken[1] == 'DO_MAINTENANCE' ) ) {
+	if ( ( $filetoken[0] == T_STRING ) && ( $filetoken[1] == 'DO_MAINTENANCE' || $filetoken[1] == 'RUN_MAINTENANCE_IF_MAIN'  ) ) {
 		// Hack for MediaWiki maintenance
 		if ( substr( $lastFilename, -15 ) == 'Maintenance.php' ) {
 			$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
