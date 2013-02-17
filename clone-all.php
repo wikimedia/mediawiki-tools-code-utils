@@ -21,7 +21,7 @@ foreach ( $projects as $project ) {
 	$repo = urldecode( $project->id );
 	print "$repo\n";
 
-	if ( strpos( strtolower( $project->description ), "deleted" ) !== false ) {
+	if ( isset( $project->description ) && strpos( strtolower( $project->description ), "deleted" ) !== false ) {
 		echo " Don't use, skipped\n";
 		continue;
 	}
