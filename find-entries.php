@@ -42,6 +42,7 @@ function getLastSignificantToken( $tokens, $i, $howold = 1 ) {
 function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	# Parses the /[ (]*(dirname *\( *__FILE__ *\) *)?T_CONSTANT_ENCAPSED_STRING[) ]*;/ regex
 	static $lastFilename = "";
+	$absolute = false;
 
 	while ( ( $tokens[$i] == '(' ) || ( $tokens[$i][0] == T_WHITESPACE ) ) {
 		$i++;
@@ -57,10 +58,12 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		$absolute = true;
 	} elseif ( $tokens[$i][0] == T_DIR ) {
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		$absolute = true;
 	}
 
 	$filetoken = $tokens[$i];
@@ -91,6 +94,17 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 		}
 	}
 	$lastFilename = $filename;
+
+	if ( $absolute === false && ( $filename[0] == '/' || ( substr(PHP_OS, 0, 3) == 'WIN' && substr( $filename, 1, 3 ) == ':\\\\' ) ) ) {
+		$absolute = "";
+	}
+
+	if ( !$absolute ) {
+		$resolvedFilename = stream_resolve_include_path( $filename );
+		if ( $resolvedFilename !== false ) {
+			return $resolvedFilename;
+		}
+	}
 
 	return dirname( $currentFilename ) . '/' . $filename;
 }
