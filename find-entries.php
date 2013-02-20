@@ -41,7 +41,7 @@ function getLastSignificantToken( $tokens, $i, $howold = 1 ) {
  */
 function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	# Parses the /[ (]*(dirname *\( *__FILE__ *\) *)?T_CONSTANT_ENCAPSED_STRING[) ]*;/ regex
-	static $lastFilename = "";
+	static $lastFilename = array( false, "" );
 	$absolute = false;
 
 	while ( ( $tokens[$i] == '(' ) || ( $tokens[$i][0] == T_WHITESPACE ) ) {
@@ -49,28 +49,33 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	}
 
 	if ( ( $tokens[$i][0] == T_STRING ) && $tokens[$i][1] == 'dirname' ) {
+		$absolute = dirname( $currentFilename );
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '(' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		if ( $tokens[$i][0] != T_FILE ) return false;
+		if ( $tokens[$i][0] == T_DIR ) {
+			$absolute = dirname( dirname( $currentFilename ) );
+		} elseif ( $tokens[$i][0] != T_FILE ) {
+			return false;
+		}
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != ')' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		$absolute = true;
 	} elseif ( $tokens[$i][0] == T_DIR ) {
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		$absolute = true;
+		$absolute = dirname( $currentFilename );
 	}
 
 	$filetoken = $tokens[$i];
 	if ( ( $filetoken[0] == T_STRING ) && ( $filetoken[1] == 'DO_MAINTENANCE' || $filetoken[1] == 'RUN_MAINTENANCE_IF_MAIN'  ) ) {
 		// Hack for MediaWiki maintenance
-		if ( substr( $lastFilename, -15 ) == 'Maintenance.php' ) {
-			$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
+		if ( substr( $lastFilename[1], -16 ) == '/Maintenance.php' ) {
+			$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename[1] ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
+			$absolute = $lastFilename[0];
 		} else {
 			return false;
 		}
@@ -93,20 +98,21 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 			return false;
 		}
 	}
-	$lastFilename = $filename;
+	$lastFilename =  array( $absolute, $filename );
 
 	if ( $absolute === false && ( $filename[0] == '/' || ( substr(PHP_OS, 0, 3) == 'WIN' && substr( $filename, 1, 3 ) == ':\\\\' ) ) ) {
 		$absolute = "";
 	}
 
-	if ( !$absolute ) {
+	if ( $absolute === false ) {
 		$resolvedFilename = stream_resolve_include_path( $filename );
 		if ( $resolvedFilename !== false ) {
 			return $resolvedFilename;
 		}
+		$absolute = dirname( $currentFilename );
 	}
 
-	return dirname( $currentFilename ) . '/' . $filename;
+	return $absolute . '/' . $filename;
 }
 
 function isEntryPoint( $file ) {
