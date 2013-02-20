@@ -120,7 +120,7 @@ function isEntryPoint( $file ) {
 	$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare' );
 
 	$rpath = realpath( $file );
-	if ( isset( $evaluatedFiles[$rpath] ) ) {
+	if ( isset( $evaluatedFiles[$rpath] ) && substr( $rpath, -16 ) !== "/Benchmarker.php" ) {
 		return $evaluatedFiles[$rpath];
 	}
 	$evaluatedFiles[$rpath] = true;
