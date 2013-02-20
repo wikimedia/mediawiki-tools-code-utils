@@ -129,8 +129,9 @@ function isEntryPoint( $file ) {
 	$safeBraces = 0;
 	$definedAutomaton = token_get_all( "<?php if(!defined('constant_name')){" ); # TODO: Rob Church does extensions the other way
 	$cliSapiAutomaton = token_get_all( "<?php if(php_sapi_name()!='cli'){" );
-	array_shift( $definedAutomaton ); array_shift( $cliSapiAutomaton );
-	$definedAutomatonState = $cliSapiAutomatonState = 0;
+	$cliSapiAutomaton2 = token_get_all( "<?php if(PHP_SAPI!='cli'){" );
+	array_shift( $definedAutomaton ); array_shift( $cliSapiAutomaton ); array_shift( $cliSapiAutomaton2 );
+	$definedAutomatonState = $cliSapiAutomatonState = $cliSapiAutomaton2State = 0;
 	$inDefinedConditional = false;
 	$mustDieOnThisSection = false;
 	$contents = file_get_contents( $file );
@@ -167,6 +168,19 @@ function isEntryPoint( $file ) {
 					}
 				} else {
 					$cliSapiAutomatonState = 0;
+				}
+
+				if ( ( $tokens[$i] == $cliSapiAutomaton2[$cliSapiAutomaton2State] ) ||
+					 ( ( $tokens[$i][0] == $cliSapiAutomaton2[$cliSapiAutomaton2State][0] )
+					 && ( $tokens[$i][1] == $cliSapiAutomaton2[$cliSapiAutomaton2State][1] ) ) )
+				{
+					$cliSapiAutomaton2State++;
+					if ( $cliSapiAutomaton2State >= count( $cliSapiAutomaton2 ) ) {
+						$inDefinedConditional = true;
+						$cliSapiAutomaton2State = 0;
+					}
+				} else {
+					$cliSapiAutomaton2State = 0;
 				}
 			}
 		}
