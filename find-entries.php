@@ -117,7 +117,7 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 
 function isEntryPoint( $file ) {
 	static $evaluatedFiles = array();
-	$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare' );
+	$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare', 'getcwd' );
 
 	$rpath = realpath( $file );
 	if ( isset( $evaluatedFiles[$rpath] ) && substr( $rpath, -16 ) !== "/Benchmarker.php" ) {
