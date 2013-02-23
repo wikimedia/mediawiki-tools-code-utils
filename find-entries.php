@@ -229,9 +229,15 @@ function isEntryPoint( $file ) {
 			} elseif ( in_array( $tokens[$i][0], array( T_INCLUDE, T_INCLUDE_ONCE, T_REQUIRE, T_REQUIRE_ONCE ) ) ) {
 				$filename = getIncludeFilename( $rpath, $tokens, $i + 1 );
 
-				if ( !$filename || isEntryPoint( $filename ) ) {
+				if ( !$filename || $iep = isEntryPoint( $filename ) ) {
 					debug( "$file {$tokens[$i][1]}s another file in line {$tokens[$i][2]}" );
 					return true;
+				}
+				if ( $iep === null ) {
+					// There won't be any web access to this file below the include
+					debug( "$file {$tokens[$i][1]}s $filename in line {$tokens[$i][2]} and it ends the request" );
+					$evaluatedFiles[$rpath] = null;
+					return null;
 				}
 			} elseif ( $tokens[$i][0] == T_INLINE_HTML ) {
 				if ( $inDefinedConditional ) {
@@ -252,8 +258,8 @@ function isEntryPoint( $file ) {
 			} elseif ( in_array( $tokens[$i][0], array( T_RETURN, T_EXIT ) ) ) {
 				if ( !$braces || $inDefinedConditional ) {
 					debug( "$file ends its processing with a {$tokens[$i][1]} in line {$tokens[$i][2]}" );
-					$evaluatedFiles[$rpath] = false;
-					return false;
+					$evaluatedFiles[$rpath] = null;
+					return null;
 				}
 			} elseif ( $tokens[$i] == '(' ) {
 				$lastToken = getLastSignificantToken( $tokens, $i );
