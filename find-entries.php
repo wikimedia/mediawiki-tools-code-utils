@@ -131,6 +131,8 @@ function isEntryPoint( $file ) {
 	$cliSapiAutomatons = array();
 	$cliSapiAutomatons[] = token_get_all( "<?php if(php_sapi_name()!='cli'){" );
 	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!='cli'){" );
+	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!=='cli'){" );
+	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!='cli-server'){" );
 	array_shift( $definedAutomaton ); array_walk($cliSapiAutomatons, function(&$array,$key) { array_shift($array); });
 	$definedAutomatonState = 0; $cliSapiAutomatonsState = str_split( str_repeat( '0', count( $cliSapiAutomatons ) ) );
 	$inDefinedConditional = false;
