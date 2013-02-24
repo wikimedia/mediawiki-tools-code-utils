@@ -128,10 +128,11 @@ function isEntryPoint( $file ) {
 	$braces = 0;
 	$safeBraces = 0;
 	$definedAutomaton = token_get_all( "<?php if(!defined('constant_name')){" ); # TODO: Rob Church does extensions the other way
-	$cliSapiAutomaton = token_get_all( "<?php if(php_sapi_name()!='cli'){" );
-	$cliSapiAutomaton2 = token_get_all( "<?php if(PHP_SAPI!='cli'){" );
-	array_shift( $definedAutomaton ); array_shift( $cliSapiAutomaton ); array_shift( $cliSapiAutomaton2 );
-	$definedAutomatonState = $cliSapiAutomatonState = $cliSapiAutomaton2State = 0;
+	$cliSapiAutomatons = array();
+	$cliSapiAutomatons[] = token_get_all( "<?php if(php_sapi_name()!='cli'){" );
+	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!='cli'){" );
+	array_shift( $definedAutomaton ); array_walk($cliSapiAutomatons, function(&$array,$key) { array_shift($array); });
+	$definedAutomatonState = 0; $cliSapiAutomatonsState = str_split( str_repeat( '0', count( $cliSapiAutomatons ) ) );
 	$inDefinedConditional = false;
 	$mustDieOnThisSection = false;
 	$contents = file_get_contents( $file );
@@ -157,30 +158,19 @@ function isEntryPoint( $file ) {
 					$definedAutomatonState = 0;
 				}
 
-				if ( ( $tokens[$i] == $cliSapiAutomaton[$cliSapiAutomatonState] ) ||
-					 ( ( $tokens[$i][0] == $cliSapiAutomaton[$cliSapiAutomatonState][0] )
-					 && ( $tokens[$i][1] == $cliSapiAutomaton[$cliSapiAutomatonState][1] ) ) )
-				{
-					$cliSapiAutomatonState++;
-					if ( $cliSapiAutomatonState >= count( $cliSapiAutomaton ) ) {
-						$inDefinedConditional = true;
-						$cliSapiAutomatonState = 0;
+				for ($j = 0; $j < count( $cliSapiAutomatons ); $j++) {
+					if ( ( $tokens[$i] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]] ) ||
+						 ( ( $tokens[$i][0] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]][0] )
+						 && ( $tokens[$i][1] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]][1] ) ) )
+					{
+						$cliSapiAutomatonsState[$j]++;
+						if ( $cliSapiAutomatonsState[$j] >= count( $cliSapiAutomatons[$j] ) ) {
+							$inDefinedConditional = true;
+							$cliSapiAutomatonsState[$j] = 0;
+						}
+					} else {
+						$cliSapiAutomatonsState[$j] = 0;
 					}
-				} else {
-					$cliSapiAutomatonState = 0;
-				}
-
-				if ( ( $tokens[$i] == $cliSapiAutomaton2[$cliSapiAutomaton2State] ) ||
-					 ( ( $tokens[$i][0] == $cliSapiAutomaton2[$cliSapiAutomaton2State][0] )
-					 && ( $tokens[$i][1] == $cliSapiAutomaton2[$cliSapiAutomaton2State][1] ) ) )
-				{
-					$cliSapiAutomaton2State++;
-					if ( $cliSapiAutomaton2State >= count( $cliSapiAutomaton2 ) ) {
-						$inDefinedConditional = true;
-						$cliSapiAutomaton2State = 0;
-					}
-				} else {
-					$cliSapiAutomaton2State = 0;
 				}
 			}
 		}
