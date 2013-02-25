@@ -37,37 +37,54 @@ function getLastSignificantToken( $tokens, $i, $howold = 1 ) {
 }
 
 /**
+ * Reads $tokens indexed by $i, leaving the resulting folder in $resultdir
+ * - Returns true if it advanced some folder.
+ * - Returns false if it didn't match the expected tokens.
+ * - Returns null if it didn't change $resultdir
+ */
+function advanceDirnames($tokens, &$i, &$resultdir) {
+	if ( $tokens[$i][0] == T_FILE ) {
+		$resultdir = $resultdir;
+	} elseif ( $tokens[$i][0] == T_DIR ) {
+		$resultdir = dirname( $resultdir );
+	} elseif ( ( $tokens[$i][0] == T_STRING ) && $tokens[$i][1] == 'dirname' ) {
+		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		if ( $tokens[$i] != '(' ) return false;
+		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		$resultdir = dirname( $resultdir );
+
+		if ( !advanceDirnames($tokens, $i, $resultdir) )
+			return false;
+
+		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		if ( $tokens[$i] != ')' ) return false;
+	} else {
+		return null;
+	}
+	return true;
+}
+
+/**
  * Return the filename being included or false
  */
 function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	# Parses the /[ (]*(dirname *\( *__FILE__ *\) *)?T_CONSTANT_ENCAPSED_STRING[) ]*;/ regex
 	static $lastFilename = array( false, "" );
-	$absolute = false;
 
 	while ( ( $tokens[$i] == '(' ) || ( $tokens[$i][0] == T_WHITESPACE ) ) {
 		$i++;
 	}
 
-	if ( ( $tokens[$i][0] == T_STRING ) && $tokens[$i][1] == 'dirname' ) {
-		$absolute = dirname( $currentFilename );
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		if ( $tokens[$i] != '(' ) return false;
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		if ( $tokens[$i][0] == T_DIR ) {
-			$absolute = dirname( dirname( $currentFilename ) );
-		} elseif ( $tokens[$i][0] != T_FILE ) {
-			return false;
-		}
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		if ( $tokens[$i] != ')' ) return false;
+	$absolute = $currentFilename;
+	$advanced = advanceDirnames( $tokens, $i, $absolute );
+	if ( $advanced ) {
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
 		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-	} elseif ( $tokens[$i][0] == T_DIR ) {
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		if ( $tokens[$i] != '.' ) return false;
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
-		$absolute = dirname( $currentFilename );
+	} elseif ( $advanced === false ) {
+		return false;
+	} else {
+		$absolute = false;
 	}
 
 	$filetoken = $tokens[$i];
