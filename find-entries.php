@@ -254,7 +254,7 @@ function isEntryPoint( $file ) {
 					if ( !$mustDieOnThisSection ) {
 						$mustDieOnThisSection = "$file outputs html in line {$tokens[$i][2]}";
 					}
-				} else {
+				} elseif ( $i != 0 || $tokens[$i][1] != "#!/usr/bin/env php\n" ) {
 					debug( "$file outputs html in line {$tokens[$i][2]}" );
 					return true;
 				}
