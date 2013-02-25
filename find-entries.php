@@ -19,6 +19,8 @@
 
 ini_set( "memory_limit", -1 );
 
+$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare', 'getcwd' );
+
 function debug( $msg ) {
 	global $debug;
 	if ( $debug ) {
@@ -134,7 +136,7 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 
 function isEntryPoint( $file ) {
 	static $evaluatedFiles = array();
-	$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare', 'getcwd' );
+	global $whitelistedFunctions;
 
 	$rpath = realpath( $file );
 	if ( isset( $evaluatedFiles[$rpath] ) && substr( $rpath, -16 ) !== "/Benchmarker.php" ) {
@@ -308,6 +310,11 @@ if ( ( $argv[0] == '--verbose' ) || ( $argv[0] == '-v' ) ) {
 
 if ( ( $argv[0] == '--debug' ) || ( $argv[0] == '-d' ) ) {
 	$debug = true;
+	array_shift( $argv );
+}
+
+if ( substr( $argv[0], 0, 8 ) == '--allow=' ) {
+	$whitelistedFunctions = array_merge( $whitelistedFunctions, explode( ',', substr( $argv[0], 8 ) ) );
 	array_shift( $argv );
 }
 
