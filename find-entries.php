@@ -66,12 +66,13 @@ function advanceDirnames($tokens, &$i, &$resultdir) {
 	return true;
 }
 
+$includedFilenames = array();
 /**
  * Return the filename being included or false
  */
 function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	# Parses the /[ (]*(dirname *\( *__FILE__ *\) *)?T_CONSTANT_ENCAPSED_STRING[) ]*;/ regex
-	static $lastFilename = array( false, "" );
+	global $includedFilenames;
 
 	while ( ( $tokens[$i] == '(' ) || ( $tokens[$i][0] == T_WHITESPACE ) ) {
 		$i++;
@@ -92,10 +93,15 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	$filetoken = $tokens[$i];
 	if ( ( $filetoken[0] == T_STRING ) && ( $filetoken[1] == 'DO_MAINTENANCE' || $filetoken[1] == 'RUN_MAINTENANCE_IF_MAIN'  ) ) {
 		// Hack for MediaWiki maintenance
-		if ( substr( $lastFilename[1], -16 ) == '/Maintenance.php' ) {
-			$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename[1] ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
-			$absolute = $lastFilename[0];
-		} else {
+		foreach ( $includedFilenames as $lastFilename ) {
+			if ( substr( $lastFilename[1], -16 ) == '/Maintenance.php' ) {
+				$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename[1] ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
+				$absolute = $lastFilename[0];
+				break;
+			}
+		}
+
+		if ( !$absolute ) {
 			return false;
 		}
 	} else if ( $filetoken[0] != T_CONSTANT_ENCAPSED_STRING ) {
@@ -117,7 +123,8 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 			return false;
 		}
 	}
-	$lastFilename =  array( $absolute, $filename );
+
+	$includedFilenames[] = array( $absolute, $filename );
 
 	if ( $absolute === false && ( $filename[0] == '/' || ( substr(PHP_OS, 0, 3) == 'WIN' && substr( $filename, 1, 3 ) == ':\\\\' ) ) ) {
 		$absolute = "";
@@ -134,12 +141,22 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	return $absolute . '/' . $filename;
 }
 
+/**
+ * Returns if the analysis of a file is suitable to be cached.
+ * For MediaWiki, maintenance scripts (including Benchmarks) may be
+ * including Maintenance.php through several files and thus we are
+ * not caching them.
+ */
+function cacheableAnalysis( $path ) {
+	return strpos( $path, 'maintenance' ) === false;
+}
+
 function isEntryPoint( $file ) {
 	static $evaluatedFiles = array();
-	global $whitelistedFunctions;
+	global $whitelistedFunctions, $includedFilenames;
 
 	$rpath = realpath( $file );
-	if ( isset( $evaluatedFiles[$rpath] ) && substr( $rpath, -16 ) !== "/Benchmarker.php" ) {
+	if ( isset( $evaluatedFiles[$rpath] ) && cacheableAnalysis( $rpath ) ) {
 		return $evaluatedFiles[$rpath];
 	}
 	$evaluatedFiles[$rpath] = true;
@@ -319,6 +336,7 @@ if ( substr( $argv[0], 0, 8 ) == '--allow=' ) {
 }
 
 foreach ( $argv as $arg ) {
+	$includedFilenames = array();
 	if ( isEntryPoint( $arg ) ) {
 		$entries++;
 		echo "$arg is an entry point\n";
