@@ -19,7 +19,7 @@
 
 ini_set( "memory_limit", -1 );
 
-$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare', 'getcwd' );
+$whitelistedFunctions = array( 'define', 'defined', 'dirname', 'function_exists', 'class_exists', 'php_sapi_name', 'version_compare', 'phpversion', 'getcwd' );
 
 function debug( $msg ) {
 	global $debug;
