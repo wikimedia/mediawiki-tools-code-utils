@@ -306,6 +306,7 @@ class CheckVars {
 			'RedisBagOStuff.php' => array( 'Redis', 'RedisException' ),
 			'JobQueueRedis.php' => array( 'Redis', 'RedisException' ),
 			'RedisConnectionPool.php' => array( 'Redis', 'RedisException' ),
+			'JobQueueAggregatorRedis.php' => array( 'Redis', 'RedisException' ),
 		);
 
 	/* ApiBase has some profile methods */
@@ -1012,7 +1013,7 @@ class CheckVars {
 								$requirePath = dirname( $this->mFilename );
 							} elseif ( $requirePath == 'dirname(dirname(__FILE__))' || $requirePath == 'dirname(__DIR__)' ) {
 								$requirePath = dirname( dirname( $this->mFilename ) );
-							} elseif ( $requirePath == 'dirname(dirname(dirname(__FILE__)))' ) {
+							} elseif ( $requirePath == 'dirname(dirname(dirname(__FILE__)))' || $requirePath == 'dirname(dirname(__DIR__))' ) {
 								$requirePath = dirname( dirname( dirname( $this->mFilename ) ) );
 							}
 						} else if ( $token[0] == T_CURLY_OPEN || $token == '}' ) {
