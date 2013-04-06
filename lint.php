@@ -5,9 +5,58 @@
  * Recursive directory crawling PHP syntax checker
  * Uses parsekit, which is much faster than php -l for lots of files due to the
  * PHP startup overhead.
+ *
+ * @author Tim Starling
+ * @author Timo Tijhof
+ * @file
  */
 
-function check_dir( $dir ) {
+require_once( __DIR__ . '/includes/MwCodeUtilsArgs.php' );
+
+if ( php_sapi_name() != 'cli' ) {
+	echo "This script must be run from the command line\n";
+	exit( 1 );
+}
+
+$self = array_shift( $argv );
+
+$verbose = false;
+$paths = array();
+
+if ( count( $argv ) ) {
+	$args = new MwCodeUtilsArgs( $argv );
+	$unknownArgs = array_diff( array_keys( $args->flags ), array( 'h', 'help', 'v', 'verbose' ) );
+	if ( count( $unknownArgs ) ) {
+		echo "error: unknown option '{$unknownArgs[0]}'\n\n";
+		$args->flags['help'] = true;
+	}
+
+	if ( $args->flag( 'help' ) || $args->flag( 'h' ) ) {
+		echo "usage: php $self [options] [<files/directories>..]
+
+    -v, --verbose         Be verbose in output
+    -h, --help            Show this message
+";
+		exit( 0 );
+	}
+
+	$verbose = $args->flag( 'verbose' ) || $args->flag( 'v' );
+	$paths = $args->args;
+}
+
+if ( !count( $paths ) ) {
+	$paths = array( '.' );
+}
+
+/**
+ * @param string $dir
+ * @param bool [$verbose=false]
+ * @return bool
+ */
+function mwCodeUtils_lintDir( $dir, $verbose = false ) {
+	if ( $verbose ) {
+		print "... checking $dir\n";
+	}
 	$handle = opendir( $dir );
 	if ( !$handle ) {
 		return true;
@@ -18,9 +67,9 @@ function check_dir( $dir ) {
 			continue;
 		}
 		if ( is_dir( "$dir/$fileName" ) ) {
-			$ret = check_dir( "$dir/$fileName" );
+			$ret = check_dir( "$dir/$fileName", $verbose );
 		} elseif ( substr( $fileName, -4 ) == '.php' ) {
-			$ret = check_file( "$dir/$fileName" );
+			$ret = check_file( "$dir/$fileName", $verbose );
 		} else {
 			$ret = true;
 		}
@@ -30,13 +79,21 @@ function check_dir( $dir ) {
 	return $success;
 }
 
-function check_file( $file ) {
+/**
+ * @param string $file
+ * @param bool [$verbose=false]
+ * @return bool
+ */
+function mwCodeUtils_lintFile( $file, $verbose = false ) {
+	if ( $verbose ) {
+		print "... checking $file\n";
+	}
 	static $okErrors = array(
 		'Redefining already defined constructor',
 		'Assigning the return value of new by reference is deprecated',
-		# https://bugs.php.net/64596
-		'Cannot redeclare check_dir() (previously declared in',
-		'Cannot redeclare check_file() (previously declared in',
+		# Allow this file to lint itself (https://bugs.php.net/64596)
+		'Cannot redeclare mwCodeUtils_lintDir() (previously declared in',
+		'Cannot redeclare mwCodeUtils_lintFile() (previously declared in',
 	);
 	$errors = array();
 	parsekit_compile_file( $file, $errors, PARSEKIT_SIMPLE );
@@ -55,19 +112,24 @@ function check_file( $file ) {
 	return $ret;
 }
 
-if ( isset( $argv[1] ) ) {
-	$path = $argv[1];
+$allOK = true;
+foreach ( $paths as $path ) {
 	if ( !file_exists( $path ) ) {
 		echo "Path not found: $path\n";
-		exit( 1 );
+		$allOK = false;
+		continue;
 	}
-} else {
-	$dir = '.';
+	$ret = is_dir( $path ) ? mwCodeUtils_lintDir( $path, $verbose ) : mwCodeUtils_lintFile( $path, $verbose );
+	$allOK = $allOK && $ret;
 }
-
-$ret = is_dir( $path ) ? check_dir( $path ) : check_file( $path );
-if ( !$ret ) {
-	exit( 1 );
-} else {
+if ( $allOK ) {
+	if ( $verbose ) {
+		echo "\nAll OK!\n";
+	}
 	exit( 0 );
+} else {
+	if ( $verbose ) {
+		echo "\nOne or more errors.\n";
+	}
+	exit( 1 );
 }

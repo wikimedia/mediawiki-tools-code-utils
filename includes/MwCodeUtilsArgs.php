@@ -61,6 +61,9 @@ class MwCodeUtilsArgs {
 		}
 
 		// Any arguments after the last - or --
+		// FIXME: This ignores arguments before and between options
+		// So in "$ php file.php foo bar --verbose baz --force quux qux"
+		// it will silently ignore foo, bar and baz.
 		for ( $i = count( $argv ) - 1; $i >= 0; $i-- ) {
 			if ( preg_match( '/^--?.+/', $argv[$i] ) == 0 )
 				$this->args[] = $argv[$i];
