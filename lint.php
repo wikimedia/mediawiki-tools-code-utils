@@ -34,6 +34,9 @@ function check_file( $file ) {
 	static $okErrors = array(
 		'Redefining already defined constructor',
 		'Assigning the return value of new by reference is deprecated',
+		# https://bugs.php.net/64596
+		'Cannot redeclare check_dir() (previously declared in',
+		'Cannot redeclare check_file() (previously declared in',
 	);
 	$errors = array();
 	parsekit_compile_file( $file, $errors, PARSEKIT_SIMPLE );
