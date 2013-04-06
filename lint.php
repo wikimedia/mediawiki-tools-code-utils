@@ -53,16 +53,17 @@ function check_file( $file ) {
 }
 
 if ( isset( $argv[1] ) ) {
-	$dir = $argv[1];
-	if ( !is_dir( $dir ) ) {
-		echo "Not a directory: $dir\n";
+	$path = $argv[1];
+	if ( !file_exists( $path ) ) {
+		echo "Path not found: $path\n";
 		exit( 1 );
 	}
 } else {
 	$dir = '.';
 }
 
-if ( !check_dir( $dir ) ) {
+$ret = is_dir( $path ) ? check_dir( $path ) : check_file( $path );
+if ( !$ret ) {
 	exit( 1 );
 } else {
 	exit( 0 );
