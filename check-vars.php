@@ -929,6 +929,11 @@ class CheckVars {
 
 					case self::IN_REQUIRE_WAITING:
 					case self::IN_FUNCTION_REQUIRE:
+						if ( $token == '{' ) {
+							$this->mBraces++;
+							$token = ';';
+						}
+
 						if ( $token == ';' ) {
 							$requirePath = trim( $requirePath, ')("' );
 
