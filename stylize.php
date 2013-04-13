@@ -10,7 +10,7 @@
  * @file
  */
 
-require_once( __DIR__ . '/includes/Args.php' );
+require_once( __DIR__ . '/includes/MwCodeUtilsArgs.php' );
 
 if ( php_sapi_name() != 'cli' ) {
 	echo "This script must be run from the command line\n";
@@ -20,7 +20,7 @@ if ( php_sapi_name() != 'cli' ) {
 array_shift( $argv );
 
 if ( count( $argv ) ) {
-	$args = new Args( $argv );
+	$args = new MwCodeUtilsArgs( $argv );
 
 	if ( $args->flag( 'help' ) ) {
 		echo "Usage: php stylize.php [--backup|--help|--ignore=<regextoexclude>] <files/directories>
