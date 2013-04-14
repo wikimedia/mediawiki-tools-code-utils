@@ -67,9 +67,9 @@ function mwCodeUtils_lintDir( $dir, $verbose = false ) {
 			continue;
 		}
 		if ( is_dir( "$dir/$fileName" ) ) {
-			$ret = check_dir( "$dir/$fileName", $verbose );
+			$ret = mwCodeUtils_lintDir( "$dir/$fileName", $verbose );
 		} elseif ( substr( $fileName, -4 ) == '.php' ) {
-			$ret = check_file( "$dir/$fileName", $verbose );
+			$ret = mwCodeUtils_lintFile( "$dir/$fileName", $verbose );
 		} else {
 			$ret = true;
 		}
