@@ -305,6 +305,7 @@ class CheckVars {
 			
 			'RedisBagOStuff.php' => array( 'Redis', 'RedisException' ),
 			'JobQueueRedis.php' => array( 'Redis', 'RedisException' ),
+			'RedisLockManager.php' => array( 'RedisException' ),
 			'RedisConnectionPool.php' => array( 'Redis', 'RedisException' ),
 			'JobQueueAggregatorRedis.php' => array( 'Redis', 'RedisException' ),
 		);
