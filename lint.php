@@ -13,7 +13,7 @@
 
 require_once( __DIR__ . '/includes/MwCodeUtilsArgs.php' );
 
-if ( php_sapi_name() != 'cli' ) {
+if ( PHP_SAPI != 'cli' ) {
 	echo "This script must be run from the command line\n";
 	exit( 1 );
 }
