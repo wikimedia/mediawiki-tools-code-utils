@@ -410,6 +410,16 @@ class CheckVars {
 			$source = preg_replace( '/if \( ' . preg_quote( $m[2] ) . ' \) /', "if ( " . $m[2] . " && extension_loaded( '" . $m[1] . "' ) ", $source );
 		}
 
+		if ( basename( $file ) == 'Preprocessor_Hash.php' ) {
+			// Move the contents of the if ( $cacheable ) { checks at 594 and 602 to inline ifs, so the wfProfileOut() counter doesn't miss __METHOD__-cache-miss
+			$source = preg_replace( '/(if \( \$cacheable \) {\r?\n)(\t*)(wfProfileOut\(.*\);\r?\n)((\t*)(wfProfileOut\(.*\);\r?\n))\t*}/', "\n$2if ( \$cacheable ) $3$5if ( \$cacheable ) $4", $source );
+		}
+
+		if ( basename( $file ) == 'Preprocessor_DOM.php' ) {
+			// Move the second wfProfileOut() inside the if ( $cacheable ) { }, at line 172
+			$source = preg_replace( '/(if \( \$cacheable \) {\r?\n\t*wfProfileOut\(.*\);\r?\n)(\t*}\r?\n)(\t*wfProfileOut\(.*\);\r?\n)/', "$1$3$2", $source );
+		}
+
 		$this->mTokens = token_get_all( $source );
 		$this->queuedFunctions = array();
 	}
