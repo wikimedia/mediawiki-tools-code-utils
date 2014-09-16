@@ -155,7 +155,6 @@ class Stylizer {
 		T_WHILE,
 		T_XOR_EQUAL,
 		'{',
-		'}',
 		'%',
 		'^',
 		// '&', can be unary, we have a special case for =&
@@ -163,7 +162,6 @@ class Stylizer {
 		'=',
 		'+',
 		'|',
-		// ':', can be a case label
 		'.',
 		'<',
 		'>',
@@ -172,17 +170,21 @@ class Stylizer {
 	);
 	static $spaceBefore = array(
 		')',
+		'}',
 		'-', // $foo = -1; shouldn't change to $foo = - 1;
 	);
 	static $spaceAfter = array(
 		'(',
 		';',
 		',',
+		':', // can be a case label
 	);
 	static $closePairs = array(
 		'(' => ')',
 		'=' => '&',
 		'{' => '}',
+		'?' => ':',
+		T_OBJECT_OPERATOR => '{',
 	);
 
 	// Tokens that eat spaces after them
