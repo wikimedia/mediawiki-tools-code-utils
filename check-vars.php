@@ -236,7 +236,6 @@ class CheckVars {
 					'$wgQueryPages', # QueryPage.php
 					'$wgRequest', # Setup.php
 					'$wgRequestTime', # WebStart.php
-					'$wgRUstart', # WebStart.php, for Profiler stuff
 					'$wgTitle', # index.php
 					'$wgUpdates', # updaters
 					'$wgUseEnotif', # Setup.php
