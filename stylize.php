@@ -272,9 +272,9 @@ class Stylizer {
 	function stylize() {
 		$out = '';
 		for ( $this->p = 0; $this->p < count( $this->tokens ); $this->p++ ) {
-			list( $prevType, $prevText ) = $prevToken = $this->getPrev();
+			list( $prevType, ) = $prevToken = $this->getPrev();
 			list( $curType, $curText ) = $curToken = $this->getCurrent();
-			list( $nextType, $nextText ) = $nextToken = $this->getNext();
+			list( $nextType, ) = $nextToken = $this->getNext();
 
 			// Don't format strings
 			if ( $curType == '"' ) {

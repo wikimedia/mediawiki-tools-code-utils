@@ -98,13 +98,11 @@ function _analyze_tokens( $token_array ) {
 			$name_token = $tokens->nextOfKind( T_STRING );
 
 			if ( $token[0] == T_CLASS ) {
-				$TYPE = 'class';
 				$state['cdepth'] = $state['depth'];
 				$state['cstart_line'] = $state['cur_line'];
 				$state['class']  = $name_token[1];
 				print "Analyzing class {$state['class']}\n";
 			} else {
-				$TYPE = 'function';
 				$state['fdepth'] = $state['depth'];
 				$state['fstart_line'] = $state['cur_line'];
 				if ( $state['class'] ) {
@@ -151,7 +149,6 @@ class TokenIterator extends ArrayIterator {
 	 * Skip tokens until we reach the wanted token, return it.
 	 */
 	function nextOfKind( $wanted_token_index ) {
-		$found = false;
 		while ( true ) {
 			$this->next();
 			$token = $this->current();
