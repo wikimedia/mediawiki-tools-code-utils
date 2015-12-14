@@ -1342,9 +1342,8 @@ class CheckVars {
 	}
 
 	/**
-	 * Returns a
-	 * @param  $token Token holding the class name
-	 * @param  $warn  A value from 'no', 'defer', 'now¡
+	 * @param array $token Token holding the class name
+	 * @param string $warn  A value from 'no', 'defer', 'now¡
 	 * @return mixed  The class name if it is found, false otherwise
 	 */
 	function checkClassName( $token, $warn = 'defer' ) {

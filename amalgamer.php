@@ -108,7 +108,7 @@ class RevFetcher {
 
 	/**
 	 * @param $url API url
-	 * @ return array
+	 * @return array
 	*/
 	private function reallyFetch( $url )
 	{
