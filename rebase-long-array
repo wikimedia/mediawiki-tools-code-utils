@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e
+
+# Configuration
+
+SOURCE_DIR="$MW_INSTALL_PATH"
+WORK_BRANCH="$1"
+MASTER_BRANCH=master
+SCHROOT_PREFIX=
+SCHROOT_OVERLAY=
+
+# End configuration
+
+function fix_source() {
+	$SCHROOT_PREFIX vendor/bin/phpcbf $FILES \
+		|| true # phpcbf returns 1 when it fixes things
+	if [ -n "$SCHROOT_OVERLAY" ]; then
+		for f in $FILES; do
+			mv -v "$SCHROOT_OVERLAY/$f" "$SOURCE_DIR/$f"
+		done
+	fi
+}
+
+cd "$SOURCE_DIR"
+git checkout "$WORK_BRANCH"
+
+FILES=$(git diff-tree -r --name-only HEAD^ HEAD)
+UNFIXED_WORK=$(git rev-parse "$WORK_BRANCH")
+
+echo "Trying to fix $UNFIXED_WORK"
+
+# Generate fixed base commit
+
+git checkout "$WORK_BRANCH"^
+fix_source
+git commit -a -m "Temporary commit: fixed base"
+FIXED_BASE=$(git rev-parse HEAD)
+
+# Generate fixed work commit
+git checkout "$UNFIXED_WORK"
+fix_source
+git commit -a -m "Temporary commit: fixed work"
+FIXED_WORK=$(git rev-parse HEAD)
+
+# Reset the work branch to master
+git checkout "$WORK_BRANCH"
+git reset --hard "$MASTER_BRANCH"
+
+# Synthesize a commit on top of it, with conflict markers 
+git diff "$FIXED_BASE" "$FIXED_WORK" | git apply --index -3 || true
+
+# Write the old commit message to MERGE_MSG so that it will be used as the default commit message
+git log -1 "$UNFIXED_WORK" --format=%B > .git/MERGE_MSG
+
+echo "Done. Type \"git commit\" when ready."
