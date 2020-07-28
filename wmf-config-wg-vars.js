@@ -52,18 +52,18 @@ lines.length = 0;
 
 // Report vars
 // console.log(Object.keys(varNames));
-console.log('Found ' + Object.keys(varNames).length + ' unique wg* variable names.');
+console.log('Search for ' + Object.keys(varNames).length + ' unique wg* variable names.');
 
 // Search, find, and reduce!
 (async function () {
 	const headers = {
-		'User-Agent': 'wmf-config-wg-vars.js; Contact <https://meta.wikimedia.org/wiki/User:Krinkle>'
+		'User-Agent': 'wmf-config-wg-vars.js (from mediawiki/tools/code-utils.git)'
 	};
 	for (const varName in varNames) {
 		console.log('Searching... for ' + varName)
 		let result = await req({
 			headers: headers,
-			url: 'https://codesearch.wmflabs.org/search/api/v1/search?'
+			url: 'https://codesearch.wmcloud.org/deployed/api/v1/search?'
 				+ querystring.stringify({
 					repos: '*',
 					rng: ':20',
