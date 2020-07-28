@@ -1,10 +1,33 @@
+/**
+ * wmf-config-wg-vars.js: Find bad wg-variable references in wmf-config.
+ *
+ * Requires Node 8 or later.
+ *
+ * Usage:
+ *
+ * ```
+ * # Update copy of mediawiki-config
+ * you$ cd /path/to/operations/mediawiki-config
+ * you:mediawiki-config$ git pull
+ *
+ * # Dump matches
+ * you$ cd code-utils/
+ * you:code-utils$ ack "[$'\"]wg[A-Z]" /path/to/operations/mediawiki-config > wgvars.log
+ *
+ * # - Enter isolated environment (e.g. using Fresh)
+ * # - install deps
+ * # - run this script
+ * you:code-utils$ fresh-node
+ * nobody:code-utils$ npm install request@2 request-promise-native@1
+ * nobody:code-utils$ node wmf-config-wg-vars.js
+ * ```
+ */
+
 const fs = require('fs');
 const req = require('request-promise-native');
 const querystring = require('querystring');
 
-// ~/Development/wikimedia/operations/mediawiki-config (master)
-// $ git grep "[$'\"]wg[A-Z]"  > ~/Development/tmp/wmf-config-wg-vars.log
-const lines = fs.readFileSync('./wmf-config-wg-vars.log').toString().split('\n');
+const lines = fs.readFileSync('./wgvars.log').toString().split('\n');
 const varNames = Object.create(null);
 
 // Collect variable names
