@@ -3,8 +3,7 @@
 ############################################################################### 
 # This is a git pre-commit hook, designed to be run by the git commit command.
 # The purpose of this script is to run phpcs and phpcbf before the commit
-# is created, to detect and fix code style issues. If not all issues could
-# be fixed, the commit is aborted.
+# is created, to automatically detect and fix code style issues.
 #
 # This script is designed for use on the mediawiki core repo. It may need 
 # adjustments to work on other repos.
@@ -112,7 +111,7 @@ fi
 
 # Check if we can run the code sniffer
 if [ ! -f "$phpcs" ]; then
-	# Abort the commit and propt the use to fix the issues.
+	# Abort the commit and prompt the user to fix the issues.
 	echo "${CLR_RED}OOPS! Code sniffer not found! Did you forget to run composer install?${CLR_NONE}"
 	echo -n "${CLR_RED}Will continue in FIVE seconds WITHOUT checking for style errors:"
 	countdown 5
@@ -134,22 +133,25 @@ if ! "$phpcs" -q --cache "${staged[@]}" > /dev/null 2> /dev/null; then
 	# Note: phpcbf returns > 0 if it found any errors, even if it fixed them. 
 	# It will return 0 if it found no fixable errors, even if there are other errors.
 	# So use || true to ignore the exit code.
-	"$phpcbf" -q "${staged[@]}" > /dev/null 2> /dev/null || true
+	"$phpcbf" "${staged[@]}" || true
 
 	echo "${CLR_BLUE}Adding changes to the commit...${CLR_NONE}"
 
 	# Add any changes we made by fixing smells, even if some are left.
 	git add "$staged"
+	git status --untracked-files=no
 
 	# After fixing, check again if there are any smells left.
 	if "$phpcs" -s --cache "${staged[@]}" > "$fbuffer" 2> /dev/null; then
-		echo "${CLR_GREEN}All good now!${CLR_NONE}"
+		# Abort the commit and propt the use to commit again.
+		echo "${CLR_GREEN}Code smells fixed. Please commit again.${CLR_NONE}"
 		echo
+		exit 1
 	else
 		# Abort the commit and propt the use to fix the issues.
+		cat "$fbuffer"
 		echo "${CLR_RED}${CLR_BOLD}DOH! Could not fix all smells.${CLR_NONE}"
 		echo
-		cat "$fbuffer"
 		exit 1
 	fi
 else
