@@ -1,0 +1,157 @@
+#!/bin/bash
+
+############################################################################### 
+# This is a git pre-commit hook, designed to be run by the git commit command.
+# The purpose of this script is to run phpcs and phpcbf before the commit
+# is created, to detect and fix code style issues. If not all issues could
+# be fixed, the commit is aborted.
+#
+# This script is designed for use on the mediawiki core repo. It may need 
+# adjustments to work on other repos.
+#
+# To activate this script for a git repo, place it in the .git/hooks directory
+# and rename it to "pre-commit". A symlink would also work. If you have 
+# multiple scripts you want to run before every commit, create a script called
+# "pre-commit", and call each script from there.
+#
+# Written by Daniel Kinzler in 2022.
+# Provided in the hope it may be helpful.
+# Use at your own risk. 
+############################################################################### 
+
+set -e -u
+
+# Color codes, see http://linux.101hacks.com/ps1-examples/prompt-color-using-tput/
+CLR_BOLD=$(tput bold 2>/dev/null || true)
+CLR_RED=$(tput setaf 1 2>/dev/null || true)
+CLR_GREEN=$(tput setaf 2 2>/dev/null || true)
+CLR_BLUE=$(tput setaf 4 2>/dev/null || true)
+CLR_NONE=$(tput sgr0 2 2>/dev/null || true)
+
+# Find executables relative to repo root
+root=$(git rev-parse --show-toplevel)
+phpcs="$root/vendor/bin/phpcs"
+phpcbf="$root/vendor/bin/phpcbf"
+
+# Temporary files
+fstaged=$(mktemp)
+funstaged=$(mktemp)
+fdirty=$(mktemp)
+fbuffer=$(mktemp)
+
+# Cleanup functions
+function teardown {
+	rm "$fstaged" "$funstaged" "$fdirty" "$fbuffer" || true
+	echo -n "$CLR_NONE" || true # reset terminal colors
+}
+
+# Function for checking if a files is empty, ignoring whitespace
+function empty {
+	if [[ -z $( grep '[^[:space:]]' "$1" ) ]]; then
+		return 0 # grep returned no output, so the file is empty
+	else
+		return 1 # grep returned output, so the file is not empty
+	fi
+}
+
+function countdown {
+	sec="$1"
+	while [ $sec -gt 0 ]; do
+		echo -n " ${sec}"
+		let "sec=sec-1"
+		sleep 1
+	done || true
+	return
+}
+
+# Call teardown on exit
+trap teardown EXIT SIGTERM SIGINT
+
+# cd into the repo's root directory
+cd "$root"
+
+# Get staged files (without deleted) und unstaged changes
+git diff --name-only --staged  --diff-filter=d > "$fstaged"
+git diff --name-only > "$funstaged"
+
+# Detect files with both staged and unstaged changes
+cat "$fstaged" "$funstaged" | sort | uniq -d > "$fdirty"
+
+# If there are files that have both staged and unstaged changes,
+# abort the commit. This tends to be a mistake. The unstaged
+# changes should either be added or stashed.
+if ! empty "$fdirty"; then
+	echo
+	echo "${CLR_RED}${CLR_BOLD}Found dirty files!"
+	echo "Add, stash or restore them first.${CLR_NONE}"
+	echo
+	cat "$fdirty"
+	echo
+	exit 1
+fi
+
+# If there are no modifications changed, there is nothing more to do.
+# Note that there may be staged deletions!
+# So return 0 and allow the commit to go ahead.
+if empty "$fstaged"; then
+	exit 0
+fi
+
+# Read the list of modified files
+readarray -t staged < "$fstaged"
+
+# If there is a comment that says DO NOT PUSH/SUBMIT/COMMIT,
+# don't allow the commit to continue. This is useful for marking
+# temporary debug code.
+if egrep -Hn "(//|#) *(DO NOT (PUSH|SUBMIT|COMMIT))" "${staged[@]}"; then
+	echo
+	echo "${CLR_RED}${CLR_BOLD}Found DO NOT SUBMIT marker!${CLR_NONE}"
+	echo
+	exit 1
+fi
+
+# Check if we can run the code sniffer
+if [ ! -f "$phpcs" ]; then
+	# Abort the commit and propt the use to fix the issues.
+	echo "${CLR_RED}OOPS! Code sniffer not found! Did you forget to run composer install?${CLR_NONE}"
+	echo -n "${CLR_RED}Will continue in FIVE seconds WITHOUT checking for style errors:"
+	countdown 5
+	echo "${CLR_NONE}"
+
+	# Retrun 0 so the commit proceeds normally
+	exit 0
+fi
+
+echo
+echo "${CLR_BLUE}Running code sniffer...${CLR_NONE}"
+
+# Check if phpcs finds any style issues
+if ! "$phpcs" -q --cache "${staged[@]}" > /dev/null 2> /dev/null; then
+	echo "${CLR_BLUE}Found some smells, fixing...${CLR_NONE}"
+	echo
+
+	# Try to fix any smelles.
+	# Note: phpcbf returns > 0 if it found any errors, even if it fixed them. 
+	# It will return 0 if it found no fixable errors, even if there are other errors.
+	# So use || true to ignore the exit code.
+	"$phpcbf" -q "${staged[@]}" > /dev/null 2> /dev/null || true
+
+	echo "${CLR_BLUE}Adding changes to the commit...${CLR_NONE}"
+
+	# Add any changes we made by fixing smells, even if some are left.
+	git add "$staged"
+
+	# After fixing, check again if there are any smells left.
+	if "$phpcs" -s --cache "${staged[@]}" > "$fbuffer" 2> /dev/null; then
+		echo "${CLR_GREEN}All good now!${CLR_NONE}"
+		echo
+	else
+		# Abort the commit and propt the use to fix the issues.
+		echo "${CLR_RED}${CLR_BOLD}DOH! Could not fix all smells.${CLR_NONE}"
+		echo
+		cat "$fbuffer"
+		exit 1
+	fi
+else
+	echo "${CLR_BLUE}all good.${CLR_NONE}"
+fi
