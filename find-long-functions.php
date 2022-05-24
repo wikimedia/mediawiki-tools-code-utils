@@ -1,5 +1,17 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.SpaceBeforeComma
+// phpcs:disable MediaWiki.Commenting.DocComment.SyntaxAlignedDocClose
+// phpcs:disable MediaWiki.WhiteSpace.MultipleEmptyLines.MultipleEmptyLines
+// phpcs:disable MediaWiki.WhiteSpace.SpaceAfterControlStructure.Incorrect
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+// phpcs:disable PSR2.ControlStructures.SwitchDeclaration.TerminatingComment
+// phpcs:disable Squiz.PHP.NonExecutableCode.Unreachable
+// phpcs:disable Squiz.Scope.MethodScope.Missing
+// phpcs:disable Squiz.WhiteSpace.FunctionSpacing.After
+// phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore
+// phpcs:disable Squiz.WhiteSpace.SemicolonSpacing.Incorrect
 /**
  * Simple tool to count the number of line in PHP functions.
  *

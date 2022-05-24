@@ -1,5 +1,14 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable MediaWiki.Commenting.PropertyDocumentation.MissingDocumentationPublic
+// phpcs:disable MediaWiki.ExtraCharacters.ParenthesesAroundKeyword.ParenthesesAroundKeywords
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+// phpcs:disable PSR2.Classes.PropertyDeclaration.Multiple
+// phpcs:disable PSR2.Classes.PropertyDeclaration.ScopeMissing
+// phpcs:disable PSR2.Classes.PropertyDeclaration.VarUsed
+// phpcs:disable Squiz.Scope.MemberVarScope.Missing
+// phpcs:disable Squiz.Scope.MethodScope.Missing
 
 /**
  * A PHP code beautifier aimed at adding lots of spaces to files that lack them,

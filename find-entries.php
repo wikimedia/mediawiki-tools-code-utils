@@ -1,5 +1,25 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.ControlStructures.InlineControlStructure.NotAllowed
+// phpcs:disable Generic.Files.LineLength.TooLong
+// phpcs:disable Generic.Formatting.DisallowMultipleStatements.SameLine
+// phpcs:disable MediaWiki.ControlStructures.AssignmentInControlStructures.AssignmentInControlStructures
+// phpcs:disable MediaWiki.Usage.StaticClosure.StaticClosure
+// phpcs:disable MediaWiki.VariableAnalysis.UnusedGlobalVariables.UnusedGlobal$includedFilenames
+// phpcs:disable MediaWiki.WhiteSpace.SpaceAfterClosure.NoWhitespaceAfterClosure
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeControlStructureBrace.BraceOnNewLine
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeControlStructureBrace.SpaceBeforeControl
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceAfterOpenParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceBeforeCloseParenthesis
+// phpcs:disable PSR2.ControlStructures.ElseIfDeclaration.NotAllowed
+// phpcs:disable PSR2.Files.EndFileNewline.TooMany
+// phpcs:disable Squiz.Functions.FunctionDeclarationArgumentSpacing.NoSpaceBeforeArg
+// phpcs:disable Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingAfterOpen
+// phpcs:disable Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingBeforeClose
+// phpcs:disable Squiz.WhiteSpace.FunctionSpacing.Before
+// phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore
 
 /**
  * This is a generic code for checking php files for entry points.

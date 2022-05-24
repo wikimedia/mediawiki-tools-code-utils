@@ -1,5 +1,42 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.ControlStructures.InlineControlStructure.NotAllowed
+// phpcs:disable Generic.Files.LineLength.TooLong
+// phpcs:disable Generic.Formatting.SpaceAfterNot.Incorrect
+// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.SpaceBeforeComma
+// phpcs:disable Generic.PHP.NoSilencedErrors.Discouraged
+// phpcs:disable MediaWiki.Commenting.FunctionComment.SpacingAfterParamName
+// phpcs:disable MediaWiki.Commenting.FunctionComment.SpacingAfterReturnType
+// phpcs:disable MediaWiki.Commenting.FunctionComment.WrongStyle
+// phpcs:disable MediaWiki.Commenting.PropertyDocumentation.MissingDocumentationPublic
+// phpcs:disable MediaWiki.ControlStructures.AssignmentInControlStructures.AssignmentInControlStructures
+// phpcs:disable MediaWiki.ControlStructures.IfElseStructure.SpaceAfterElse
+// phpcs:disable MediaWiki.ControlStructures.IfElseStructure.SpaceBeforeElse
+// phpcs:disable MediaWiki.ExtraCharacters.ParenthesesAroundKeyword.ParenthesesAroundKeywords
+// phpcs:disable MediaWiki.Usage.DirUsage.FunctionFound
+// phpcs:disable MediaWiki.Usage.IsNull.IsNull
+// phpcs:disable MediaWiki.WhiteSpace.MultipleEmptyLines.MultipleEmptyLines
+// phpcs:disable MediaWiki.WhiteSpace.OpeningKeywordParenthesis.WrongWhitespaceBeforeParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceAfterControlStructure.Incorrect
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.SingleSpaceBeforeSingleLineComment
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceAfterOpenParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceBeforeCloseParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SpaceBeforeOpeningParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.UnnecessarySpaceBetweenParentheses
+// phpcs:disable PSR12.Properties.ConstantVisibility.NotFound
+// phpcs:disable PSR2.Classes.PropertyDeclaration.ScopeMissing
+// phpcs:disable PSR2.Classes.PropertyDeclaration.VarUsed
+// phpcs:disable PSR2.ControlStructures.ElseIfDeclaration.NotAllowed
+// phpcs:disable PSR2.ControlStructures.SwitchDeclaration.TerminatingComment
+// phpcs:disable Squiz.Classes.SelfMemberReference.NotUsed
+// phpcs:disable Squiz.Scope.MemberVarScope.Missing
+// phpcs:disable Squiz.Scope.MethodScope.Missing
+// phpcs:disable Squiz.WhiteSpace.FunctionSpacing.Before
+// phpcs:disable Squiz.WhiteSpace.SemicolonSpacing.Incorrect
+// phpcs:disable Squiz.WhiteSpace.SuperfluousWhitespace.EndLine
+
 
 /*
  * Checks a number of syntax conventions on variables from a valid PHP file.

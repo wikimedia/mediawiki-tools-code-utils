@@ -1,4 +1,10 @@
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.ControlStructures.InlineControlStructure.NotAllowed
+// phpcs:disable MediaWiki.Commenting.PropertyDocumentation.MissingDocumentationPublic
+// phpcs:disable MediaWiki.ControlStructures.IfElseStructure.SpaceAfterElse
+// phpcs:disable MediaWiki.ControlStructures.IfElseStructure.SpaceBeforeElse
+
 /**
  * From:
  * - http://code.google.com/p/tylerhall/source/browse/trunk/class.args.php

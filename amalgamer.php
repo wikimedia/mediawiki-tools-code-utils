@@ -1,5 +1,22 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable Generic.Formatting.MultipleStatementAlignment.IncorrectWarning
+// phpcs:disable Generic.Functions.OpeningFunctionBraceKernighanRitchie.BraceOnNewLine
+// phpcs:disable Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+// phpcs:disable MediaWiki.Commenting.DocComment.SyntaxAlignedDocClose
+// phpcs:disable MediaWiki.Commenting.FunctionComment.WrongStyle
+// phpcs:disable MediaWiki.Commenting.PropertyDocumentation.MissingVar
+// phpcs:disable MediaWiki.WhiteSpace.DisallowEmptyLineFunctions.NoEmptyLine
+// phpcs:disable MediaWiki.WhiteSpace.MultipleEmptyLines.MultipleEmptyLines
+// phpcs:disable PSR12.Properties.ConstantVisibility.NotFound
+// phpcs:disable PSR2.Files.EndFileNewline.TooMany
+// phpcs:disable Squiz.Scope.MethodScope.Missing
+// phpcs:disable Squiz.WhiteSpace.FunctionSpacing.After
+// phpcs:disable Squiz.WhiteSpace.FunctionSpacing.Before
+// phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore
+// phpcs:disable Squiz.WhiteSpace.SemicolonSpacing.Incorrect
 
 /**
  * Basic class allowing to fetch codereview revisions metadata.

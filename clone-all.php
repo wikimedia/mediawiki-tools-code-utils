@@ -1,5 +1,13 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.Files.LineLength.TooLong
+// phpcs:disable MediaWiki.Usage.ForbiddenFunctions.escapeshellarg
+// phpcs:disable MediaWiki.Usage.ForbiddenFunctions.passthru
+// phpcs:disable MediaWiki.Usage.ForbiddenFunctions.popen
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.NewLineComment
+
 $gerrit = "gerrit.wikimedia.org";
 $baseUrl = "ssh://$gerrit:29418"; // "https://$gerrit/r/p" if you have no ssh access
 

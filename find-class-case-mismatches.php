@@ -1,5 +1,12 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable MediaWiki.Commenting.FunctionAnnotations.UnrecognizedAnnotation
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable MediaWiki.Commenting.FunctionAnnotations.UnrecognizedAnnotation
+// phpcs:disable MediaWiki.Commenting.FunctionComment.WrongStyle
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceAfterOpenParenthesis
+// phpcs:disable MediaWiki.WhiteSpace.SpaceyParenthesis.SingleSpaceBeforeCloseParenthesis
+
 /**
  * Scan a PHP codebase for incorrectly capitalized class names.
  *

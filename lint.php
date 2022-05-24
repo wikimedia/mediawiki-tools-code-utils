@@ -1,5 +1,11 @@
 #!/usr/bin/env php
 <?php
+// phpcs:disable Generic.Arrays.DisallowLongArraySyntax.Found
+// phpcs:disable Generic.ControlStructures.DisallowYodaConditions.Found
+// phpcs:disable MediaWiki.Commenting.FunctionComment.NotParenthesisParamName
+// phpcs:disable MediaWiki.Commenting.FunctionComment.ParamNameNoMatch
+// phpcs:disable MediaWiki.ControlStructures.AssignmentInControlStructures.AssignmentInControlStructures
+// phpcs:disable MediaWiki.ExtraCharacters.ParenthesesAroundKeyword.ParenthesesAroundKeywords
 
 /**
  * Recursive directory crawling PHP syntax checker

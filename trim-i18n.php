@@ -1,4 +1,7 @@
 <?php
+// phpcs:disable MediaWiki.Usage.StaticClosure.StaticClosure
+// phpcs:disable MediaWiki.WhiteSpace.SpaceAfterClosure.NoWhitespaceAfterClosure
+// phpcs:disable MediaWiki.WhiteSpace.SpaceBeforeSingleLineComment.SingleSpaceBeforeSingleLineComment
 
 if ( PHP_SAPI !== 'cli' ) {
 	die( 'This is a command line script, it cannot be run in ' . PHP_SAPI . " mode\n" );
