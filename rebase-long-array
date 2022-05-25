@@ -13,6 +13,7 @@ SCHROOT_OVERLAY=
 # End configuration
 
 function fix_source() {
+	# shellcheck disable=SC2086
 	$SCHROOT_PREFIX vendor/bin/phpcbf $FILES \
 		|| true # phpcbf returns 1 when it fixes things
 	if [ -n "$SCHROOT_OVERLAY" ]; then

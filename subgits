@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 # This command allows you to perform the same action on several git repositories sharing a common root.
 #
-# For instance, after cloning you will want to do 
+# For instance, after cloning you will want to do:
 #   subgits config user.email "email@address.com"
 #   subgits config user.name "your name"
 #
@@ -12,11 +12,10 @@
 # For updating all the repositories:
 #   subgits pull
 
-EXTRA=""
+EXTRA=()
 if [ "$1" = "-v" ]; then
   shift
-  EXTRA="-execdir pwd ;"
+  EXTRA=('-execdir' 'pwd' ';')
 fi
 
-find -name .git $EXTRA -execdir git "$@" \;
-
+find . -name .git "${EXTRA[@]}" -execdir git "$@" \;

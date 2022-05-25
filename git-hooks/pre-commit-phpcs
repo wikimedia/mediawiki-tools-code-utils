@@ -1,22 +1,22 @@
 #!/bin/bash
 
-############################################################################### 
+###############################################################################
 # This is a git pre-commit hook, designed to be run by the git commit command.
 # The purpose of this script is to run phpcs and phpcbf before the commit
 # is created, to automatically detect and fix code style issues.
 #
-# This script is designed for use on the mediawiki core repo. It may need 
+# This script is designed for use on the mediawiki core repo. It may need
 # adjustments to work on other repos.
 #
 # To activate this script for a git repo, place it in the .git/hooks directory
-# and rename it to "pre-commit". A symlink would also work. If you have 
+# and rename it to "pre-commit". A symlink would also work. If you have
 # multiple scripts you want to run before every commit, create a script called
 # "pre-commit", and call each script from there.
 #
 # Written by Daniel Kinzler in 2022.
 # Provided in the hope it may be helpful.
-# Use at your own risk. 
-############################################################################### 
+# Use at your own risk.
+###############################################################################
 
 set -e -u
 
@@ -46,7 +46,7 @@ function teardown {
 
 # Function for checking if a files is empty, ignoring whitespace
 function empty {
-	if [[ -z $( grep '[^[:space:]]' "$1" ) ]]; then
+	if ! grep -q '[^[:space:]]' "$1"; then
 		return 0 # grep returned no output, so the file is empty
 	else
 		return 1 # grep returned output, so the file is not empty
@@ -55,9 +55,9 @@ function empty {
 
 function countdown {
 	sec="$1"
-	while [ $sec -gt 0 ]; do
+	while [ "$sec" -gt 0 ]; do
 		echo -n " ${sec}"
-		let "sec=sec-1"
+		(( sec=sec - 1 ))
 		sleep 1
 	done || true
 	return
@@ -102,7 +102,7 @@ readarray -t staged < "$fstaged"
 # If there is a comment that says DO NOT PUSH/SUBMIT/COMMIT,
 # don't allow the commit to continue. This is useful for marking
 # temporary debug code.
-if egrep -Hn "(//|#) *(DO NOT (PUSH|SUBMIT|COMMIT))" "${staged[@]}"; then
+if grep -E -Hn "(//|#) *(DO NOT (PUSH|SUBMIT|COMMIT))" "${staged[@]}"; then
 	echo
 	echo "${CLR_RED}${CLR_BOLD}Found DO NOT SUBMIT marker!${CLR_NONE}"
 	echo
@@ -138,7 +138,7 @@ if ! "$phpcs" -q --cache "${staged[@]}" > /dev/null 2> /dev/null; then
 	echo "${CLR_BLUE}Adding changes to the commit...${CLR_NONE}"
 
 	# Add any changes we made by fixing smells, even if some are left.
-	git add "$staged"
+	git add "${staged[@]}"
 	git status --untracked-files=no
 
 	# After fixing, check again if there are any smells left.
