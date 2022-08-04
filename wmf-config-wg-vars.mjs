@@ -44,7 +44,7 @@ lines.forEach( line => {
 		// Strip common wmf-config/ prefix for brevity in result table output
 		.replace(/^.*wmf-config\//, '');
 
-	if (fileName.slice(-4) !== '.php' || fileName.includes('/tests/')) {
+	if (fileName.slice(-4) !== '.php' || fileName.startsWith('tests/')) {
 		// Skip .html, .xml, including those in gitignore'd artefacts
 		// Skip test files
 		return;
