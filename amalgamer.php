@@ -81,28 +81,28 @@ class RevFetcher {
 			$reqRevs = array( $reqRevs );
 		}
 
-		print "Requesting   - " . join( ' | ', $reqRevs ) . "\n";
+		print "Requesting   - " . implode( ' | ', $reqRevs ) . "\n";
 
 		$notInCache = array_diff_key( array_values( $reqRevs ), $this->rev_cache->allKeys() );
-		print "  > MISSES - " . join( ' | ', $notInCache ) . "\n";
+		print "  > MISSES - " . implode( ' | ', $notInCache ) . "\n";
 
 		$inCache    = array_diff_key( array_values( $reqRevs ), $notInCache );
-		print "  > HITS   - " . join( ' | ', $inCache ) . "\n";
+		print "  > HITS   - " . implode( ' | ', $inCache ) . "\n";
 
 		if ( empty( $notInCache ) ) {
 			print "Nothing to fetch. Used cache.\n";
 			$fetched = array();
 		} else {
-			print "Fetching " . join( ' | ', $notInCache ) . "\n";
+			print "Fetching " . implode( ' | ', $notInCache ) . "\n";
 			# Forge URL
 			$url = $this->apiurl
-				. "&crrevs=" . join( '|', $notInCache )
+				. "&crrevs=" . implode( '|', $notInCache )
 			;
 			$fetched =
 				$this->reallyFetch( $url )
 				->query->coderevisions ;
 			$fetched = self::rekeyRevisions( $fetched );
-			print "Fetched  " . join( ' | ', array_keys( $fetched ) ) . "\n";
+			print "Fetched  " . implode( ' | ', array_keys( $fetched ) ) . "\n";
 
 			// Add fetched revisions to the cache
 			foreach ( $fetched as $f ) {
@@ -158,7 +158,7 @@ class RevCache {
 		if ( $this->enableDebug ) {
 			print "_____________________________________________\n";
 			print "Dumping the revision cache before destruction\n";
-			print join( ' | ', $this->allKeys() ) . "\n";
+			print implode( ' | ', $this->allKeys() ) . "\n";
 		}
 	}
 

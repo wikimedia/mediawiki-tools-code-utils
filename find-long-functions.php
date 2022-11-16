@@ -179,7 +179,7 @@ $unwanted_tokens = array( T_WHITESPACE );
 /**
  * Callback used to get ride of unneeded tokens.
  * @param mixed A PHP Token
- * @return Boolean Whether to keep the token
+ * @return bool Whether to keep the token
  */
 function _filter( $token ) {
 	global $wanted_tokens, $wanted_strings, $unwanted_tokens ;
