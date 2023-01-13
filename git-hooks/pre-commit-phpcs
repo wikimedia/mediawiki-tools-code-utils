@@ -31,16 +31,18 @@ CLR_NONE=$(tput sgr0 2 2>/dev/null || true)
 root=$(git rev-parse --show-toplevel)
 phpcs="$root/vendor/bin/phpcs"
 phpcbf="$root/vendor/bin/phpcbf"
+self="$0"
 
 # Temporary files
 fstaged=$(mktemp)
+fstaged2=$(mktemp)
 funstaged=$(mktemp)
 fdirty=$(mktemp)
 fbuffer=$(mktemp)
 
 # Cleanup functions
 function teardown {
-	rm "$fstaged" "$funstaged" "$fdirty" "$fbuffer" || true
+	rm "$fstaged" "$fstaged2" "$funstaged" "$fdirty" "$fbuffer" || true
 	echo -n "$CLR_NONE" || true # reset terminal colors
 }
 
@@ -69,9 +71,35 @@ trap teardown EXIT SIGTERM SIGINT
 # cd into the repo's root directory
 cd "$root"
 
+# Check if this hook is disabled by creating .git/hooks/pre-commit.disable
+if [ -e "$self.disable" ]; then
+	echo "${CLR_RED}${CLR_BOLD}Pre-commit cleanup disabled!${CLR_NONE}"
+	echo "${CLR_RED}Delete $self.disable to enable it.${CLR_NONE}"
+	exit 0
+fi
+
 # Get staged files (without deleted) und unstaged changes
-git diff --name-only --staged  --diff-filter=d > "$fstaged"
-git diff --name-only > "$funstaged"
+git diff --name-only --staged --diff-filter=d > "$fstaged"
+git diff --name-only --staged --ignore-submodules --diff-filter=d > "$fstaged2"
+git diff --name-only  > "$funstaged"
+
+# Detect staged submodule changes
+diff -u "$fstaged2" "$fstaged" > "$fbuffer" || true
+
+# Warn if there are submodule changes staged. This tends to be accidental.
+if ! empty "$fbuffer"; then
+	echo
+	echo "${CLR_RED}${CLR_BOLD}Found staged changes to submodules:${CLR_NONE}"
+	echo
+
+	cat "$fbuffer"
+
+	echo
+	echo "${CLR_RED}${CLR_BOLD}Are you sure you want to commit submodule changes?${CLR_NONE}"
+	echo "${CLR_RED}You have 5 seconds to abort!${CLR_NONE}"
+	echo
+	sleep 5
+fi
 
 # Detect files with both staged and unstaged changes
 cat "$fstaged" "$funstaged" | sort | uniq -d > "$fdirty"
@@ -144,7 +172,8 @@ if ! "$phpcs" -q --cache "${staged[@]}" > /dev/null 2> /dev/null; then
 	# After fixing, check again if there are any smells left.
 	if "$phpcs" -s --cache "${staged[@]}" > "$fbuffer" 2> /dev/null; then
 		# Abort the commit and propt the use to commit again.
-		echo "${CLR_GREEN}Code smells fixed. Please commit again.${CLR_NONE}"
+		echo "${CLR_GREEN}Code smells fixed.${CLR_NONE}"
+		echo "${CLR_RED}${CLR_BOLD}Files changed! Please commit again!${CLR_NONE}"
 		echo
 		exit 1
 	else
