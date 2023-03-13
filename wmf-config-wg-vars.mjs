@@ -81,7 +81,7 @@ const varQueue = Object.values(variables).sort( ( a, b ) => a.name > b.name ? 1 
 		for (const variable of varBatch) {
 			console.log('... fetching results for ' + variable.name);
 			variable.req = fetch(
-				'https://codesearch.wmcloud.org/deployed/api/v1/search?'
+				'https://codesearch-backend.wmcloud.org/deployed/api/v1/search?'
 					+ querystring.stringify({
 						repos: '*',
 						rng: ':20',
