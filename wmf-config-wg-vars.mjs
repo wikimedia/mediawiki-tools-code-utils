@@ -3,7 +3,7 @@
  *
  * See also: <https://wikitech.wikimedia.org/wiki/Technical_debt/Unused_config>
  *
- * Requires Node 14 or later.
+ * Requires Node 18 or later.
  *
  * Usage:
  *
@@ -16,25 +16,19 @@
  * you$ cd code-utils/
  * you:code-utils$ ack "[$'\"]wg[A-Z]" --type=php /path/to/operations/mediawiki-config > wgvars.log
  *
- * # - Enter isolated environment (e.g. using Fresh)
- * # - install deps
- * # - run this script
- * you:code-utils$ fresh-node
- * nobody:code-utils$ npm install node-fetch@3
- * nobody:code-utils$ node wmf-config-wg-vars.mjs
+ * # Run this script (can run in an isolated environment, e.g. Fresh)
+ * code-utils$ node wmf-config-wg-vars.mjs
  * ```
  */
 
-import * as fs from 'fs';
-import * as querystring from 'querystring';
-
-import fetch from 'node-fetch';
+import * as fs from 'node:fs';
+import * as querystring from 'node:querystring';
 
 const lines = fs.readFileSync('./wgvars.log').toString().split('\n');
 const variables = Object.create(null);
 const unusedVariables = Object.create(null);
 
-const HTTP_CONCURRENCY = 10;
+const HTTP_CONCURRENCY = 15;
 
 // Collect variable names
 lines.forEach( line => {
@@ -103,7 +97,7 @@ const varQueue = Object.values(variables).sort( ( a, b ) => a.name > b.name ? 1 
 			// Results from Hound
 			const result = data.Results;
 			// Ignore self, the source of our analysis
-			delete result['Wikimedia MediaWiki config'];
+			delete result['operations/mediawiki-config'];
 			if (!Object.keys(result).length) {
 				unusedVariables[variable.name] = variable;
 			}
