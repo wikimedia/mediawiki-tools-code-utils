@@ -8,15 +8,15 @@
  * Usage:
  *
  * ```
- * # Update your clone of gerrit:operations/mediawiki-config.git
- * you$ cd /path/to/operations/mediawiki-config
+ * # Update your clone of https://gerrit.wikimedia.org/g/operations/mediawiki-config/
+ * you$ cd /path/to/mediawiki-config/
  * you:mediawiki-config$ git pull
  *
  * # Dump matches
- * you$ cd code-utils/
- * you:code-utils$ ack "[$'\"]wg[A-Z]" --type=php /path/to/operations/mediawiki-config > wgvars.log
+ * you:mediawiki-config$ git grep "[$'\"]wg[A-Z]" '**.php' > /path/to/code-utils/wgvars.log
  *
  * # Run this script (can run in an isolated environment, e.g. Fresh)
+ * you$ cd /path/to/code-utils/
  * code-utils$ node wmf-config-wg-vars.mjs
  * ```
  */
