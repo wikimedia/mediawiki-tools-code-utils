@@ -18,21 +18,19 @@ def get_hooks(extension_name):
     return None
 
 def process_extensions(input_file, output_file):
-    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+    infile = sys.stdin if input_file == '-' else open(input_file, 'r')
+    outfile = sys.stdout if output_file == '-' else open(output_file, 'w', newline='')
+
+    try:
         csv_writer = csv.writer(outfile)
         csv_writer.writerow(['Extension Name', 'Hook Name'])
 
-        for line in infile:
-            line = line.strip()
+        extension_names = [line.strip() for line in infile if line.strip() and not line.startswith("#")]
 
-            # Skip blank lines and lines starting with "#"
-            if not line or line.startswith("#"):
-                continue
-
-            extension_name = line
-
-            # Print status message
-            print(f"Fetching hook usage for {extension_name}")
+        for extension_name in extension_names:
+            # Print status message if stdout not expected
+            if outfile != sys.stdout:
+                print(f"Fetching hook usage for {extension_name}")
 
             hooks = get_hooks(extension_name)
 
@@ -41,6 +39,11 @@ def process_extensions(input_file, output_file):
 
             for row in hooks:
                 csv_writer.writerow(row)
+    finally:
+        if infile != sys.stdin:
+            infile.close()
+        if outfile != sys.stdout:
+            outfile.close()
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
