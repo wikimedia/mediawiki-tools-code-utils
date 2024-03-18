@@ -50,17 +50,17 @@
  */
 function _analyze_tokens( $token_array ) {
 	$state = array(
-		'function'    => '',    # function name
-		'fdepth'      => null,  # function depth in the brace hierarchy
-		'fstart_line' => 0,     # function declaration start line
+		'function'    => '', # function name
+		'fdepth'      => null, # function depth in the brace hierarchy
+		'fstart_line' => 0, # function declaration start line
 
-		'class'       => '',    # class name
-		'cdepth'      => null,  # class depth in the brace hierarchy
-		'cstart_line' => 0,     # class declaration start line
+		'class'       => '', # class name
+		'cdepth'      => null, # class depth in the brace hierarchy
+		'cstart_line' => 0, # class declaration start line
 
-		'cur_line' => 0,   # current line analyzed
-		'line'     => 0,   # line number
-		'depth'    => 0,   # braces depth
+		'cur_line' => 0, # current line analyzed
+		'line'     => 0, # line number
+		'depth'    => 0, # braces depth
 	);
 
 	$tokens = new TokenIterator( $token_array );
@@ -89,7 +89,8 @@ function _analyze_tokens( $token_array ) {
 					$state['fdepth']    = null;
 					$state['fstart_line'] = null;
 				}
-			} else { print "Got unwanted string: $token\n"; }
+			} else {
+				print "Got unwanted string: $token\n"; }
 
 			debug_state( $state, $token );
 
@@ -100,32 +101,32 @@ function _analyze_tokens( $token_array ) {
 		$state['cur_line'] = $token[2];
 
 		# handles CLASS and FUNCTION tokens
-		switch( $token[0] ) {
-		case T_CURLY_OPEN:
-			$state['depth']++;
-			break;
-		case T_CLASS:
-		case T_FUNCTION:
-			# find the token giving function or class name
-			$name_token = $tokens->nextOfKind( T_STRING );
+		switch ( $token[0] ) {
+			case T_CURLY_OPEN:
+				$state['depth']++;
+				break;
+			case T_CLASS:
+			case T_FUNCTION:
+				# find the token giving function or class name
+				$name_token = $tokens->nextOfKind( T_STRING );
 
-			if ( $token[0] == T_CLASS ) {
-				$state['cdepth'] = $state['depth'];
-				$state['cstart_line'] = $state['cur_line'];
-				$state['class']  = $name_token[1];
-				print "Analyzing class {$state['class']}\n";
-			} else {
-				$state['fdepth'] = $state['depth'];
-				$state['fstart_line'] = $state['cur_line'];
-				if ( $state['class'] ) {
-					$state['function'] = $state['class'] . '::' . $name_token[1];
+				if ( $token[0] == T_CLASS ) {
+					$state['cdepth'] = $state['depth'];
+					$state['cstart_line'] = $state['cur_line'];
+					$state['class']  = $name_token[1];
+					print "Analyzing class {$state['class']}\n";
 				} else {
-					$state['function'] = $name_token[1];
+					$state['fdepth'] = $state['depth'];
+					$state['fstart_line'] = $state['cur_line'];
+					if ( $state['class'] ) {
+						$state['function'] = $state['class'] . '::' . $name_token[1];
+					} else {
+						$state['function'] = $name_token[1];
+					}
 				}
-			}
 
-		default:
-			debug_state( $state, $token );
+			default:
+				debug_state( $state, $token );
 		}
 
 		$tokens->next();
@@ -184,10 +185,10 @@ $unwanted_tokens = array( T_WHITESPACE );
 function _filter( $token ) {
 	global $wanted_tokens, $wanted_strings, $unwanted_tokens ;
 	if ( false && is_array( $token ) ) {
-		return in_array( $token[0] , $wanted_tokens );
+		return in_array( $token[0], $wanted_tokens );
 	}
 	if ( is_array( $token ) ) {
-		return !in_array( $token[0] , $unwanted_tokens );
+		return !in_array( $token[0], $unwanted_tokens );
 	}
 	if ( is_string( $token ) ) {
 		return in_array( $token, $wanted_strings );

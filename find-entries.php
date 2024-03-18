@@ -70,15 +70,18 @@ function advanceDirnames($tokens, &$i, &$resultdir) {
 	} elseif ( $tokens[$i][0] == T_DIR ) {
 		$resultdir = dirname( $resultdir );
 	} elseif ( ( $tokens[$i][0] == T_STRING ) && $tokens[$i][1] == 'dirname' ) {
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		do {
+			$i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '(' ) return false;
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		do {
+			$i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		$resultdir = dirname( $resultdir );
 
 		if ( !advanceDirnames($tokens, $i, $resultdir) )
 			return false;
 
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		do {
+			$i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != ')' ) return false;
 	} else {
 		return null;
@@ -101,9 +104,11 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 	$absolute = $currentFilename;
 	$advanced = advanceDirnames( $tokens, $i, $absolute );
 	if ( $advanced ) {
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		do {
+			$i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 		if ( $tokens[$i] != '.' ) return false;
-		do { $i++; } while ( $tokens[$i][0] == T_WHITESPACE );
+		do {
+			$i++; } while ( $tokens[$i][0] == T_WHITESPACE );
 	} elseif ( $advanced === false ) {
 		return false;
 	} else {
@@ -115,7 +120,7 @@ function getIncludeFilename( $currentFilename, $tokens, $i ) {
 		// Hack for MediaWiki maintenance
 		foreach ( $includedFilenames as $lastFilename ) {
 			if ( substr( $lastFilename[1], -16 ) == '/Maintenance.php' ) {
-				$filetoken[1] = "'" . str_replace( 'Maintenance.php',  'doMaintenance.php', $lastFilename[1] ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
+				$filetoken[1] = "'" . str_replace( 'Maintenance.php', 'doMaintenance.php', $lastFilename[1] ) . "'"; # It will be treated as clean for the wrong way, but the final result is right.
 				$absolute = $lastFilename[0];
 				break;
 			}
@@ -189,7 +194,7 @@ function isEntryPoint( $file ) {
 	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!='cli'){" );
 	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!=='cli'){" );
 	$cliSapiAutomatons[] = token_get_all( "<?php if(PHP_SAPI!='cli-server'){" );
-	array_shift( $definedAutomaton ); array_walk($cliSapiAutomatons, function(&$array,$key) { array_shift($array); });
+	array_shift( $definedAutomaton ); array_walk($cliSapiAutomatons, function(&$array, $key) { array_shift($array); });
 	$definedAutomatonState = 0; $cliSapiAutomatonsState = str_split( str_repeat( '0', count( $cliSapiAutomatons ) ) );
 	$inDefinedConditional = false;
 	$mustDieOnThisSection = false;
@@ -206,7 +211,7 @@ function isEntryPoint( $file ) {
 				if ( ( $tokens[$i] == $definedAutomaton[$definedAutomatonState] ) ||
 					 ( ( $tokens[$i][0] == $definedAutomaton[$definedAutomatonState][0] ) )
 					 && ( ( $tokens[$i][1] == $definedAutomaton[$definedAutomatonState][1] )
-					 || ( $tokens[$i][0] == T_CONSTANT_ENCAPSED_STRING ) ) )  {
+					 || ( $tokens[$i][0] == T_CONSTANT_ENCAPSED_STRING ) ) ) {
 					$definedAutomatonState++;
 					if ( $definedAutomatonState >= count( $definedAutomaton ) ) {
 						$inDefinedConditional = true;
@@ -219,8 +224,7 @@ function isEntryPoint( $file ) {
 				for ($j = 0; $j < count( $cliSapiAutomatons ); $j++) {
 					if ( ( $tokens[$i] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]] ) ||
 						 ( ( $tokens[$i][0] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]][0] )
-						 && ( $tokens[$i][1] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]][1] ) ) )
-					{
+						 && ( $tokens[$i][1] == $cliSapiAutomatons[$j][$cliSapiAutomatonsState[$j]][1] ) ) ) {
 						$cliSapiAutomatonsState[$j]++;
 						if ( $cliSapiAutomatonsState[$j] >= count( $cliSapiAutomatons[$j] ) ) {
 							$inDefinedConditional = true;

@@ -73,8 +73,7 @@ class MwCodeUtilsArgs {
 		for ( $i = count( $argv ) - 1; $i >= 0; $i-- ) {
 			if ( preg_match( '/^--?.+/', $argv[$i] ) == 0 )
 				$this->args[] = $argv[$i];
-			else
-				break;
+			else break;
 		}
 
 		$this->args = array_reverse( $this->args );
