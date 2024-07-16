@@ -33,9 +33,52 @@ def get_key_rows(extension_json):
 
     return rows
 
+def collect_services(reg_data, aggregator):
+    if isinstance(reg_data, dict):
+        # detect object spec
+        if ( reg_data.get('class') is not None
+            or reg_data.get('factory') is not None ):
+                # collect service names
+                services = reg_data.get('services')
+                if services is not None:
+                    aggregator += services
+        else:
+            # recurse into values
+            for key in reg_data:
+                collect_services(reg_data[key], aggregator)
+    elif isinstance(reg_data, str):
+        # don't iterate over strings
+        pass
+    else:
+        # try to recurse into elements
+        try:
+            for elem in reg_data:
+                collect_services(elem, aggregator)
+        except TypeError:
+            # Not iterable, nothing to do.
+            # This will hide type errors from inside collect_services. 
+            pass
+
+def get_service_rows(extension_json):
+    # Extract keys from extension.json dict
+    name = extension_json.get("name")
+    rows = []
+
+    for key in extension_json:
+        services = []
+        collect_services(extension_json[key], services)
+
+        for srv in services:
+            rows.append( (name, key, srv) )
+
+    return rows
+
+
 def generate_output(extension_json, csv_writer, options):
     if options.hooks:
         rows = get_hook_rows(extension_json)
+    elif options.services:
+        rows = get_service_rows(extension_json)
     else:
         rows = get_key_rows(extension_json)
 
@@ -45,6 +88,8 @@ def generate_output(extension_json, csv_writer, options):
 def generate_header(csv_writer, options):
     if options.hooks:
         csv_writer.writerow(['Extension Name', 'Hook Name'])
+    elif options.services:
+        csv_writer.writerow(['Extension Name', 'Registration Field', 'Service Name'])
     else:
        csv_writer.writerow(['Extension Name', 'Registration Field'])
 
@@ -106,6 +151,7 @@ def main():
     parser.add_argument('output_file', help='Path to the output file or "-" for stdout. Will be a CSV file.')
     parser.add_argument('--skins', action='store_true', help='Look for skins instead of extensions')
     parser.add_argument('--hooks', action='store_true', help='List hook usage')
+    parser.add_argument('--services', action='store_true', help='List services used')
 
     args = parser.parse_args()
     process_extensions(args.input_file, args.output_file, args)
