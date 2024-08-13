@@ -3,6 +3,7 @@
 	<rule ref="./vendor/mediawiki/mediawiki-codesniffer/MediaWiki">
 		<exclude name="Generic.CodeAnalysis.AssignmentInCondition.Found" />
 		<exclude name="Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition" />
+		<exclude name="Generic.CodeAnalysis.RequireExplicitBooleanOperatorPrecedence.MissingParentheses" />
 		<exclude name="MediaWiki.Files.ClassMatchesFilename.NotMatch" />
 		<exclude name="MediaWiki.Commenting.FunctionComment.MissingDocumentationProtected" />
 		<exclude name="MediaWiki.Commenting.FunctionComment.MissingDocumentationPublic" />
