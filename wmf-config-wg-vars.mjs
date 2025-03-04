@@ -115,7 +115,7 @@ const varQueue = Object.values(variables).sort( ( a, b ) => a.name > b.name ? 1 
 		// Add table row
 		console.log('|-');
 		console.log('|<code>%s</code>', varName);
-		console.log('|<code>%s</code>', files.join('</code>\n<code>'));
+		console.log('|<code>%s</code>', files.join('</code><br><code>'));
 		console.log('|');
 		console.log('|');
 	} );
