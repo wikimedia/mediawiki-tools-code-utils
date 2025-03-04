@@ -79,7 +79,7 @@ const varQueue = Object.values(variables).sort( ( a, b ) => a.name > b.name ? 1 
 					+ querystring.stringify({
 						repos: '*',
 						rng: ':20',
-						q: '(\'|"|wg)' + variable.name,
+						q: '(\'|"|wg)' + variable.name + '\\b',
 						files: '',
 						excludeFiles: 'HISTORY',
 						i: 'nope'
